@@ -1,0 +1,19 @@
+name: Production Docker Validation
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - 'compose*.yml'
+      - '.dockerignore'
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build -t app:ci .

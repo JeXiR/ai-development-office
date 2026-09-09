@@ -1,0 +1,20 @@
+---
+description: Support full project audits and automatically repair missing project state files
+alwaysApply: true
+---
+
+For `status`:
+- ensure PROGRESS.md, PROJECT_STATE.md, CLAUDE.md, CURSOR.md and required .ai-kit state exist
+- create missing state from verified repository/docs evidence
+- then report status
+
+For `review project` / `audit project`:
+- run a repository-wide read-only audit
+- use project-audit
+- classify findings BLOCKER/HIGH/MEDIUM/LOW/INFO
+- update PROGRESS.md with verified findings
+- do not change application code
+
+
+For `status`, stop after reporting status. Never fix or review code.
+For `review project`, Git is optional; audit repository files directly when Git is absent. Never initialize Git just to perform review.

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Development Kit Current Task",
+  "type": "object",
+  "properties": {
+    "updated_at": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "todo",
+        "in_progress",
+        "blocked",
+        "failed",
+        "done"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "milestone": {
+      "type": "string"
+    },
+    "feature_doc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "changed_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation": {
+      "type": "object"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_action": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "updated_at",
+    "status",
+    "title"
+  ]
+}

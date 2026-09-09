@@ -1,0 +1,33 @@
+{
+  "id": "backend.laravel",
+  "version": "1.0",
+  "category": "backend",
+  "aliases": [
+    "laravel"
+  ],
+  "depends_on": [
+    "runtime.php"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "php",
+    "laravel",
+    "laravel-api",
+    "authentication",
+    "authorization",
+    "security"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-laravel.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "artisan",
+      "composer.json"
+    ]
+  }
+}

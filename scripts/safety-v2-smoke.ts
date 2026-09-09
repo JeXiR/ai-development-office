@@ -1,0 +1,9 @@
+import fs from "node:fs";import os from "node:os";import path from "node:path";import {DestructiveCommandClassifier} from "../src/safety-v2/classifier";import {AuthorizationService} from "../src/safety-v2/authorization";import {ApprovalStore} from "../src/safety-v2/approval-store";import {RuntimeBudgetGuard} from "../src/safety-v2/budget-guard";import {getSandboxProfile} from "../src/safety-v2/sandbox";import {maskSecrets} from "../src/safety-v2/secrets";
+const risk=new DestructiveCommandClassifier().classify("git reset --hard HEAD~1");if(!risk.destructive||risk.level!=="high")throw new Error("classifier failed");
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),"office-safetyv2-"));const policy={network:"ask",providerExecution:"allow",terminalWrite:"ask",terminalTerminate:"ask",filesystemWrite:"ask"} as const;const profile=getSandboxProfile("guarded");
+const auth=new AuthorizationService().authorize({projectId:"p1",projectPath:temp,actor:"qa",action:"filesystemWrite",policy,profile,resource:".env"});if(!auth.requiresApproval||auth.allowed)throw new Error("protected path approval failed");
+new ApprovalStore().decide(temp,auth.approvalId!,"approved","human");
+const auth2=new AuthorizationService().authorize({projectId:"p1",projectPath:temp,actor:"qa",action:"filesystemWrite",policy,profile,resource:".env",approvalId:auth.approvalId});if(!auth2.allowed)throw new Error("approval failed");
+const budget=new RuntimeBudgetGuard().evaluate({startedAt:new Date(Date.now()-91*60000).toISOString(),tokens:260000,costUsd:26,ceilings:{maxRuntimeMinutes:90,maxTokens:250000,maxCostUsd:25}});if(budget.ok||budget.violations.length!==3)throw new Error("budget failed");
+if(!maskSecrets("Bearer abcdefghijklmnopqrstuvwxyz123456").includes("***REDACTED***"))throw new Error("mask failed");
+console.log("Safety v2 smoke PASS");

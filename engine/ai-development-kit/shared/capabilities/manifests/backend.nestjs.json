@@ -1,0 +1,35 @@
+{
+  "id": "backend.nestjs",
+  "version": "1.0",
+  "category": "backend",
+  "aliases": [
+    "nestjs",
+    "nest.js"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "nestjs",
+    "typescript",
+    "authentication",
+    "authorization",
+    "security"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-nestjs.ps1",
+    "arguments": {
+      "Destination": "apps\\api"
+    }
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "apps/api/package.json",
+      "apps/api/src/main.ts"
+    ]
+  }
+}

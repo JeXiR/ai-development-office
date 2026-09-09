@@ -1,0 +1,1452 @@
+{
+  "name": "AI Development Office",
+  "version": "2.1.9",
+  "author": "JeXiR (Halil Cinkilinc)",
+  "headless_kit_dependency": false,
+  "user_application_code_modification": false,
+  "telemetry_inputs": [
+    ".ai-kit/events.jsonl",
+    ".ai-kit/office-state.json"
+  ],
+  "roles": [
+    "CEO",
+    "PM",
+    "Architect",
+    "Backend",
+    "Frontend",
+    "Database",
+    "QA",
+    "Security",
+    "DevOps",
+    "Docs"
+  ],
+  "live_kit_integration": true,
+  "launcher": [
+    "office.ps1",
+    "office.cmd",
+    "npm run office"
+  ],
+  "ui_limits": {
+    "live_events": 50,
+    "panel_max_height_px": 430
+  },
+  "state_listener_log_policy": "log only when derived state changes",
+  "multi_project": {
+    "enabled": true,
+    "config": "office.projects.json",
+    "max_live_events_per_project": 50,
+    "event_order": "newest_first"
+  },
+  "react_store_fix": "Stable Zustand selectors and shared empty state/event references",
+  "project_removal": "Office registry only; never deletes project files",
+  "command_center": {
+    "queue_file": ".ai-kit/command-requests.jsonl",
+    "history_file": "office.command-history.json",
+    "runner_required_for_ai_execution": true,
+    "v0_7_workflows": [
+      "harvest project backlog",
+      "audit frontend coverage",
+      "audit backend coverage",
+      "audit test gaps",
+      "audit security",
+      "audit devops",
+      "find next work",
+      "recheck completed work"
+    ]
+  },
+  "pixel_office": {
+    "engine": "PixiJS",
+    "animation": "Direct Pixi Container movement via useTick",
+    "sprites": "procedural v0.4; external licensed sprites can be added later",
+    "rooms": [
+      "CEO / War Room",
+      "Planning & Architecture",
+      "Ops & Knowledge",
+      "Engineering",
+      "Quality & Security",
+      "Lounge"
+    ]
+  },
+  "persistence": {
+    "windows_default": "%LOCALAPPDATA%/AI-Development-Office",
+    "upgrade_safe": true,
+    "install_directory_runtime_state": false,
+    "project_registry": "%LOCALAPPDATA%/AI-Development-Office/projects.json",
+    "listener_uses_same_registry": true
+  },
+  "runner": {
+    "providers": [
+      "cursor",
+      "claude"
+    ],
+    "project_selection": [
+      "auto",
+      "cursor",
+      "claude"
+    ],
+    "auto_priority": [
+      "cursor",
+      "claude"
+    ],
+    "cursor_known_windows_path": "%LOCALAPPDATA%/cursor-agent/agent.cmd",
+    "claude_known_windows_path": "%USERPROFILE%/.local/bin/claude.exe",
+    "cursor_readonly": "agent -p",
+    "cursor_mutating": "agent -p --force",
+    "claude": "claude -p --permission-mode auto"
+  },
+  "workspace_trust": {
+    "per_project": true,
+    "default": false,
+    "cursor_flag": "--trust",
+    "write_permission_separate": true
+  },
+  "mission_control": {
+    "layout": [
+      "team-overview",
+      "pixel-office",
+      "ceo-mission-queue",
+      "findings-workbench",
+      "live-events"
+    ],
+    "persistent_queue_order": true,
+    "finding_history": true,
+    "agent_names_per_project": true
+  },
+  "react_snapshot_fix": {
+    "stable_derived_hooks": true,
+    "active_project_queue_hook": "src/hooks/useActiveProject.ts",
+    "reason": "React 19 / Zustand getServerSnapshot stability"
+  },
+  "project_workbench": {
+    "enabled": true,
+    "sources": [
+      "PROGRESS Todo",
+      "PROGRESS Next Actions",
+      "ROADMAP",
+      "TEST_GAPS",
+      "TENANT_ISOLATION",
+      "security findings",
+      "frontend audit"
+    ],
+    "persistent_work_ledger": ".ai-kit/office-work-items.json",
+    "generated_workbench": ".ai-kit/office-workbench.json",
+    "operations_lanes": [
+      "todo",
+      "fixing",
+      "live-events"
+    ]
+  },
+  "command_contract": {
+    "work_item_fields": [
+      "workItemId",
+      "workItemTitle",
+      "workItemType"
+    ],
+    "queue_fields": [
+      "queueGroupId",
+      "queueSequence",
+      "attempt"
+    ],
+    "frontend_bridge_parity": true
+  },
+  "living_pixel_office": {
+    "room_state_machine": true,
+    "telemetry_driven": true,
+    "movement": "direct Pixi Container interpolation",
+    "agent_activity_detail": true,
+    "rooms": [
+      "CEO Office",
+      "Conference Room",
+      "Ops / Knowledge",
+      "Engineering",
+      "QA / Security Lab",
+      "Lounge / Kitchen"
+    ]
+  },
+  "professional_living_office": {
+    "original_sprite_atlas": "public/office/sprites/agent-sheet.png",
+    "animations": [
+      "idle",
+      "walk_down",
+      "walk_up",
+      "walk_left",
+      "walk_right",
+      "sit",
+      "typing",
+      "planning",
+      "reviewing",
+      "testing",
+      "meeting",
+      "waiting",
+      "blocked",
+      "error",
+      "celebrate"
+    ],
+    "waypoint_routing": true,
+    "operations_lanes": [
+      "todo",
+      "fixing",
+      "live-events"
+    ],
+    "workflow_presets": [
+      "Security Sprint",
+      "Frontend Completion",
+      "Test Gap Sprint",
+      "Docs Reconciliation",
+      "Release Readiness"
+    ]
+  },
+  "sprite_loading": {
+    "preload": "Pixi Assets.load",
+    "fallback": "procedural worker",
+    "invisible_sprite_regression_fixed": true
+  },
+  "office_visual_density": {
+    "rugs": true,
+    "chairs": true,
+    "bookshelves": true,
+    "whiteboards": true,
+    "servers": true,
+    "terminals": true,
+    "lounge": true,
+    "kitchen": true
+  },
+  "plan_first_execution": {
+    "required_for": [
+      "fix next",
+      "continue",
+      "fix finding",
+      "execute work item"
+    ],
+    "lifecycle": [
+      "queued",
+      "planning",
+      "plan_ready",
+      "running",
+      "verifying",
+      "completed"
+    ],
+    "artifact": ".ai-kit/office-plans/<command-id>.md",
+    "planning_is_readonly": true,
+    "execution_requires_plan": true
+  },
+  "live_agent_overlay": {
+    "source": ".ai-kit/events.jsonl",
+    "task_started_maps_to_active": true,
+    "stale_activity_ttl": true
+  },
+  "feature_contract_engine": {
+    "artifacts": [
+      ".ai-kit/feature-contracts.json",
+      ".ai-kit/feature-decisions.json",
+      ".ai-kit/office-feature-contracts.json"
+    ]
+  },
+  "project_coverage": {
+    "artifact": ".ai-kit/project-coverage.json",
+    "domains": [
+      "backend",
+      "frontend",
+      "security",
+      "tests",
+      "database",
+      "docs",
+      "devops",
+      "ai-integrations"
+    ]
+  },
+  "actionable_coverage": {
+    "select_missing": true,
+    "select_missing_partial": true,
+    "assign_selected_to_ceo": true,
+    "plan_first": true
+  },
+  "work_reconciliation": {
+    "command_completion_is_not_resolution": true,
+    "gap_disappears_after_reaudit_moves_to_done": true,
+    "gap_persists_after_execution_returns_to_todo": true,
+    "resolved_items_remain_in_history": true
+  },
+  "dynamic_organization": {
+    "core_roles": [
+      "CEO",
+      "CTO",
+      "PM",
+      "Architect",
+      "Docs",
+      "DevOps",
+      "QA",
+      "Security"
+    ],
+    "specialists_from_capabilities": true,
+    "organization_artifact": ".ai-kit/office-organization.json",
+    "candidate_specialists_are_not_auto_activated": true
+  },
+  "specialist_examples": [
+    "Next.js Specialist",
+    "Laravel Specialist",
+    "NestJS Specialist",
+    "Flutter Specialist",
+    "Expo Specialist",
+    "MySQL Specialist",
+    "Postgres Specialist",
+    "Redis Specialist",
+    "AWS Specialist",
+    "AI Specialist",
+    "Billing Specialist",
+    "Observability Specialist"
+  ],
+  "parallel_scheduler": {
+    "max_parallel_default": 3,
+    "environment_override": "OFFICE_MAX_PARALLEL_RUNNERS",
+    "one_active_per_role_lane": true,
+    "cross_role_parallelism": true,
+    "same_lane_serial": true,
+    "plan_first": true
+  },
+  "expanded_campus": {
+    "canvas": [
+      1480,
+      930
+    ],
+    "rooms": [
+      "Executive Suite",
+      "Conference / Architecture",
+      "Cloud / Ops / Knowledge",
+      "Engineering Floor",
+      "QA / Security Lab",
+      "Specialist Lab",
+      "Data Lab",
+      "Mobile / Device Lab"
+    ]
+  },
+  "real_progress": {
+    "source": "completed tasks / current sprint total",
+    "fake_task_percent": false
+  },
+  "multi_floor_office": {
+    "canvas": [
+      1080,
+      960
+    ],
+    "horizontal_scroll": false,
+    "floors": [
+      "executive",
+      "engineering",
+      "data-mobile",
+      "ops-quality"
+    ]
+  },
+  "dependency_scheduler": {
+    "explicit_dependency_ids": true,
+    "same_sprint_inference": true,
+    "frontend_waits_for_matching_backend": true,
+    "tests_wait_for_matching_implementation": true,
+    "artifact": ".ai-kit/office-dependency-graph.json"
+  },
+  "decision_center": {
+    "feature_questions": true,
+    "dependency_blocks": true
+  },
+  "task_reports": {
+    "artifact": ".ai-kit/task-reports/<command-id>.json",
+    "quality_gate_status": true
+  },
+  "agent_analytics": {
+    "artifact": ".ai-kit/office-agent-analytics.json",
+    "metrics": [
+      "assigned",
+      "completed",
+      "failed",
+      "queued",
+      "success-rate",
+      "average-duration",
+      "parallel-peak"
+    ]
+  },
+  "changelog_directory": "changelog",
+  "hotfixes": [
+    "generateAgentAnalytics restored",
+    "dependency queue item reference fixed",
+    "dependency inference enabled in queueWorkItems",
+    "nullable progress rendering fixed",
+    "Bookshelf import fixed"
+  ],
+  "snapshot_hotfix": "PixelOffice agentNames selector now selects stable store object and memoizes per-project names.",
+  "render_hotfix": {
+    "pixi_container_registered": true,
+    "root_cause": "PixelOffice used <pixiContainer> after Container was omitted from @pixi/react extend registry.",
+    "multi_floor_canvas": [
+      1080,
+      960
+    ]
+  },
+  "ui_overhaul": {
+    "shell": "left-navigation mission control",
+    "views": [
+      "office",
+      "agents",
+      "tasks",
+      "findings",
+      "analytics",
+      "memory",
+      "settings"
+    ],
+    "visual_asset": "public/assets/office/ai-office-campus.jpg",
+    "dynamic_overlay": true
+  },
+  "completed_features": {
+    "agent_trust_score": true,
+    "scheduled_read_only_audits": true,
+    "task_report_ui": true,
+    "formal_quality_gate_ui": true,
+    "cost_token_foundation": "unavailable-unless-provider-reports-it"
+  },
+  "interaction_hotfix": {
+    "agent_names_always_visible": true,
+    "state_driven_agent_movement": true,
+    "viewport_modal_portal": true,
+    "modal_anchor_near_click": true
+  },
+  "multi_project_manager": {
+    "unlimited_registry": true,
+    "compact_switcher": true,
+    "project_management_view": true,
+    "provider_per_project": true,
+    "trust_per_project": true,
+    "safe_remove_registry_only": true
+  },
+  "independent_verifier": {
+    "read_only_process": true,
+    "prefer_alternate_provider": true,
+    "drift_detection": true,
+    "artifact": ".ai-kit/office-verifications/<command-id>.md"
+  },
+  "collaboration": {
+    "lead_role": true,
+    "collaborator_roles": true,
+    "qa_default_for_implementation": true
+  },
+  "live_pixel_agents": {
+    "dom_pixel_sprites": true,
+    "continuous_idle_motion": true,
+    "active_walk_cycle": true,
+    "state_driven_room_transition": true,
+    "always_visible_names": true,
+    "no_new_generated_image": true
+  },
+  "live_office_movement_v2": {
+    "waypoint_routes": true,
+    "corridor_aware": true,
+    "desk_sitting_pose": true,
+    "meeting_lineup": true,
+    "ceo_summon_from_telemetry": true,
+    "walking_leg_animation": true,
+    "compact_nameplates": true
+  },
+  "visual_layer": {
+    "static_office_art": false,
+    "native_pixel_rooms": true,
+    "room_objects": "CSS/DOM",
+    "live_agents": "DOM pixel sprites",
+    "fake_background_characters": false
+  },
+  "workstation_agents_v3": {
+    "shared_workstation_map": true,
+    "idle_at_pc": true,
+    "working_at_pc": true,
+    "return_to_pc_after_meeting": true,
+    "readable_pixel_people": true,
+    "linked_seat_coordinates": true,
+    "meeting_walk_and_return": true,
+    "new_generated_artwork": false
+  },
+  "v0_17": {
+    "collaborator_execution_v2": {
+      "separate_processes": true,
+      "mode": "read-only pre-execution review",
+      "parallel": true,
+      "blocker_gate": true,
+      "artifact": ".ai-kit/office-collaboration/<command-id>-<role>.md"
+    },
+    "skills_hub": {
+      "cursor_skills": true,
+      "claude_skills": true,
+      "kit_capabilities": true,
+      "active_agent_mapping": true
+    },
+    "multi_project_overview": true,
+    "dependency_graph_ui": true,
+    "quality_gate_v2": true
+  },
+  "v0_18": {
+    "execution_modes": [
+      "solo",
+      "collaborative",
+      "competitive"
+    ],
+    "git_worktrees": true,
+    "clean_working_tree_gate": true,
+    "merge_gate": {
+      "dirty_overlap_detection": true,
+      "git_apply_check": true,
+      "patch_artifacts": ".ai-kit/office-merges/",
+      "rollback_on_verifier_failure": true
+    },
+    "competitive_execution": {
+      "cursor_worktree": true,
+      "claude_worktree": true,
+      "candidate_verification": true,
+      "cto_selection": true
+    },
+    "skills_policy": {
+      "enable_disable": true,
+      "artifact": ".ai-kit/office-skill-policy.json"
+    },
+    "portfolio_v2": true,
+    "quality_gate_v3": true,
+    "collaborative_coding": {
+      "selectable_coding_collaborators": true,
+      "separate_worktree_per_coding_agent": true,
+      "parallel_candidate_execution": true,
+      "candidate_verification": true,
+      "same_file_overlap_blocks_merge": true
+    },
+    "collaboration_graph": true
+  },
+  "v0_19": {
+    "subtask_contracts": true,
+    "file_ownership": true,
+    "recovery_manager": true,
+    "audit_trail": true,
+    "release_gate": true,
+    "doctor_v2": true,
+    "retention_cleanup": true
+  },
+  "releaseChannel": "stable",
+  "featureFreeze": true,
+  "featureFreezePolicy": "v1.1.0 is an explicit visual/readability exception requested after v1.0 freeze. The product is frozen again after this release; future work returns to patch-level fixes unless explicitly reopened.",
+  "v1_0": {
+    "command_palette": true,
+    "decision_inbox": true,
+    "notification_center": true,
+    "final_release_center": true,
+    "explicit_git_release_actions": [
+      "branch",
+      "commit",
+      "pr",
+      "leave_uncommitted"
+    ],
+    "backup_export": "non-secret JSON control-plane snapshot",
+    "stable_ui": true,
+    "production_hardening_inherited_from": "v0.19.0"
+  },
+  "hotfix": {
+    "base_version": "1.0.1",
+    "type": "readability-accessibility",
+    "description": "Increases micro-text across Office UI while preserving pixel-office geometry and feature freeze.",
+    "feature_changes": false,
+    "typography_minimum_target_px": 9
+  },
+  "v1_1": {
+    "theme_engine": true,
+    "themes": [
+      "classic-cc0",
+      "pixel-office-32",
+      "luxury-office",
+      "modern-corporate",
+      "call-center",
+      "top-down-corporate",
+      "office-hell"
+    ],
+    "default_theme": "classic-cc0",
+    "theme_persistence": "Office settings",
+    "native_code_rendered_adaptations": true,
+    "third_party_paid_assets_bundled": false,
+    "asset_slots": "public/assets/themes/<theme-id>/",
+    "character_scale": 2,
+    "agent_name_px": 13,
+    "agent_role_task_px": 12,
+    "room_title_px": 16,
+    "minimum_declared_text_px": 12
+  },
+  "v1_1_1": {
+    "canonical_backlog_precedence": true,
+    "resolved_history_feature_filter": true,
+    "read_only_queue_dedupe": true,
+    "coverage_evidence_precedence": true,
+    "infrastructure_failure_trust_exclusion": true,
+    "feature_changes": false
+  },
+  "v1_1_2": {
+    "findings_reconciliation": true,
+    "canonical_security_fixed_precedence": true,
+    "stale_lane_failure_trust_exclusion": true,
+    "feature_changes": false
+  },
+  "v1_1_3": {
+    "malformed_work_item_guard": true,
+    "legacy_state_title_guard": true,
+    "listener_crash_guard": true,
+    "feature_changes": false
+  },
+  "v1_1_4": {
+    "merge_work_items_full_defensive_rewrite": true,
+    "historical_state_normalization": true,
+    "safe_title_key_generation": true,
+    "feature_changes": false
+  },
+  "v1_1_5": {
+    "node_crypto_type_fix": true,
+    "work_item_command_id_alignment": true,
+    "work_item_last_result_type": true,
+    "feature_changes": false
+  },
+  "v1_1_6": {
+    "nullable_safe_string_fallback": true,
+    "typecheck_nullability_fix": true,
+    "feature_changes": false
+  },
+  "v1_1_7": {
+    "queue_manager": true,
+    "cancel_selected": true,
+    "cancel_all_queued": true,
+    "clear_stale_queue": true,
+    "blocked_status_attention": true,
+    "dynamic_version_ui": true
+  },
+  "v1_1_8": {
+    "queue_snapshot_project_type_fix": true,
+    "feature_changes": false
+  },
+  "v1_1_9": {
+    "response_language_docs": true,
+    "creator_attribution": true
+  },
+  "v1_1_10": {
+    "ai_response_language_dropdown": true,
+    "supported_languages": [
+      "tr",
+      "en",
+      "de",
+      "ru",
+      "auto"
+    ]
+  },
+  "v1_1_11": {
+    "office_ui_i18n": true,
+    "ui_languages": [
+      "tr",
+      "en",
+      "de",
+      "ru"
+    ],
+    "ai_response_language_independent": true
+  },
+  "v1_1_12": {
+    "mission_sidebar_i18n_hook_fix": true,
+    "localized_sidebar_navigation": true,
+    "localized_brand": true
+  },
+  "v1_1_13": {
+    "full_ui_localization_pass": true,
+    "command_text_excluded": true,
+    "runtime_static_ui_translator": true,
+    "turkish_ui_coverage": [
+      "projects",
+      "agents",
+      "skills",
+      "inbox",
+      "findings",
+      "analytics",
+      "release",
+      "doctor",
+      "recovery",
+      "retention",
+      "settings",
+      "topbar",
+      "sidebar"
+    ]
+  },
+  "v2_alpha_1": {
+    "runtime_event_bus": true,
+    "pty_process_manager": true,
+    "runtime_websocket_api": true,
+    "trusted_project_spawn_gate": true,
+    "provider_abstraction_foundation": [
+      "cursor",
+      "claude"
+    ],
+    "runtime_controls": [
+      "spawn",
+      "write",
+      "resize",
+      "terminate",
+      "terminate_project",
+      "list"
+    ]
+  },
+  "v2_alpha_2": {
+    "workspace_view": true,
+    "monaco_editor": true,
+    "xterm_live_terminal": true,
+    "file_explorer": true,
+    "file_watcher": true,
+    "git_diff_viewer": true
+  },
+  "v2_alpha_3": {
+    "office_director": true,
+    "task_decomposition": true,
+    "agent_mailbox": true,
+    "shared_blackboard": true,
+    "dependency_router": true,
+    "structured_artifacts": true,
+    "durable_collaboration_state": true
+  },
+  "v2_alpha_4": {
+    "shared_memory": true,
+    "per_agent_memory": true,
+    "memory_search": true,
+    "memory_condensation": true,
+    "memory_retention": true,
+    "director_memory_context": true
+  },
+  "v2_alpha_5": {
+    "circuit_breaker": true,
+    "runtime_controls": [
+      "pause",
+      "resume",
+      "steer",
+      "constrain",
+      "terminate"
+    ],
+    "detectors": [
+      "repeated_error",
+      "repeated_command",
+      "no_progress",
+      "time_ceiling",
+      "token_ceiling",
+      "cost_ceiling",
+      "protected_path"
+    ],
+    "safety_ui": true
+  },
+  "v2_beta_1": {
+    "providers": [
+      "cursor",
+      "claude",
+      "codex",
+      "gemini",
+      "opencode",
+      "local"
+    ],
+    "health_monitor": true,
+    "task_aware_routing": true,
+    "latency_cost_scoring": true,
+    "failover": true,
+    "session_resume_abstraction": true,
+    "provider_ui": true
+  },
+  "v2_beta_2": {
+    "event_driven_pixel_office": true,
+    "tool_station_mapping": true,
+    "avatar_movement": true,
+    "speech_bubbles": true,
+    "envelope_animation": true,
+    "file_change_animation": true,
+    "terminal_modal": true,
+    "live_task_visualization": true
+  },
+  "v2_beta_3": {
+    "native_i18n": true,
+    "dom_translation_hack": false,
+    "onboarding_wizard": true,
+    "prerequisite_checker": true,
+    "prerequisite_installer": true,
+    "project_setup_wizard": true,
+    "one_click_updater": true
+  },
+  "v2_beta_3_1": {
+    "terminal_modal_i18n_scope_hotfix": true
+  },
+  "v2_beta_3_2": {
+    "runtime_smoke_cjs_hotfix": true
+  },
+  "v2_beta_3_3": {
+    "pixel_office_browser_crypto_hotfix": true,
+    "client_node_builtin_scan": true
+  },
+  "v2_beta_3_4": {
+    "xterm_ssr_hotfix": true,
+    "native_folder_picker": true,
+    "visible_prerequisite_installer": true,
+    "duplicate_office_removed": true
+  },
+  "v2_beta_3_5": {
+    "live_terminal_ssr_fix": true,
+    "onboarding_reopen": true,
+    "idle_pixel_agents": true,
+    "pixel_character_renderer": true
+  },
+  "v2_beta_3_6": {
+    "office_agent_display_name_hotfix": true
+  },
+  "v2_rc_1": {
+    "scheduled_missions": true,
+    "heartbeat": true,
+    "mission_retry": true,
+    "token_cost_ledger": true,
+    "provider_latency_telemetry": true,
+    "task_duration_telemetry": true,
+    "plugin_sdk": true,
+    "plugin_discovery": true
+  },
+  "v2_rc_2": {
+    "git_graph": true,
+    "branch_visualization": true,
+    "commit_history": true,
+    "guarded_branch_commit": true,
+    "snapshot_restore": true,
+    "deterministic_task_ids": true,
+    "state_schema_versioning": true,
+    "automatic_migrations": true,
+    "provenance": true,
+    "event_replay": true,
+    "upgrade_compatibility_tests": true
+  },
+  "v2_rc_3": {
+    "mcp_manager": true,
+    "integrations": [
+      "github",
+      "gitlab",
+      "slack",
+      "discord",
+      "webhook",
+      "jira",
+      "linear",
+      "notion",
+      "sentry",
+      "ci"
+    ],
+    "ssh_worker": true,
+    "docker_worker": true,
+    "remote_worker_pool": true,
+    "session_replay": true,
+    "crash_safe_writes": true,
+    "disaster_recovery": true,
+    "provider_mock_layer": true
+  },
+  "v2_rc_4": {
+    "full_regression_harness": true,
+    "agent_simulation": true,
+    "provider_failover_simulation": true,
+    "security_regression": true,
+    "crash_restart_recovery": true,
+    "migration_regression": true,
+    "replay_consistency": true,
+    "backup_restore_roundtrip": true,
+    "release_acceptance": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_5": {
+    "side_by_side_diff": true,
+    "blame_context": true,
+    "task_agent_scoped_diff": true,
+    "merge_conflict_assistant": true,
+    "cherry_pick": true,
+    "rollback": true,
+    "bisect_assistant": true,
+    "auto_branch_policy": true,
+    "auto_commit_policy": true,
+    "pr_draft_foundation": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_6": {
+    "dynamic_team_creation": true,
+    "dynamic_role_creation": true,
+    "agent_quality_score": true,
+    "agent_trust_score": true,
+    "specialization_memory": true,
+    "task_aware_model_selection": true,
+    "budget_aware_routing": true,
+    "cost_aware_fallback": true,
+    "intelligent_retry": true,
+    "no_progress_recovery": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_6_1": {
+    "provider_registry_public_api_fix": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_7": {
+    "human_approval_gate": true,
+    "destructive_command_classifier": true,
+    "permission_policy": true,
+    "sandbox_profiles": true,
+    "secret_masking": true,
+    "protected_path_hardening": true,
+    "runtime_token_cost_ceilings": true,
+    "terminal_write_authorization": true,
+    "terminal_terminate_authorization": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_8": {
+    "embedding_abstraction": true,
+    "local_embeddings": true,
+    "openai_compatible_embeddings": true,
+    "vector_store": true,
+    "semantic_recall": true,
+    "memory_deduplication": true,
+    "memory_decay_retention": true,
+    "architecture_decision_lesson_memory": true,
+    "cross_agent_recall": true,
+    "memory_provenance": true,
+    "specialization_learning": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_9": {
+    "github_issue_pr_actions": true,
+    "gitlab_mr_action": true,
+    "slack_discord_actions": true,
+    "jira_linear_actions": true,
+    "notion_action": true,
+    "sentry_action_foundation": true,
+    "ci_status_watch": true,
+    "generic_webhook_trigger": true,
+    "integration_retry": true,
+    "integration_audit_log": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_10": {
+    "persistent_distributed_jobs": true,
+    "local_job_execution": true,
+    "ssh_job_execution": true,
+    "docker_job_execution": true,
+    "capability_routing": true,
+    "load_balancing": true,
+    "alternate_worker_retry": true,
+    "remote_logs": true,
+    "artifact_transfer": true,
+    "worker_failure_recovery": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_11": {
+    "workspace_tabs": true,
+    "workspace_search": true,
+    "split_editor_foundation": true,
+    "command_palette_v2": true,
+    "native_toast_modal": true,
+    "task_dag": true,
+    "pixel_desk_assignment": true,
+    "pixel_station_slotting": true,
+    "readability_scaling": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_12": {
+    "native_key_i18n": true,
+    "languages": [
+      "tr",
+      "en",
+      "de",
+      "ru"
+    ],
+    "new_rc_panels_localized": true,
+    "missing_key_audit": true,
+    "no_dom_translation_hack": true,
+    "rc_footer_corrected": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_13": {
+    "prerequisite_detector": true,
+    "provider_installer_hardened": true,
+    "version_consistency": true,
+    "staged_updater": true,
+    "update_verification": true,
+    "rollback": true,
+    "windows_launcher": true,
+    "windows_installer_foundation": true,
+    "desktop_runtime_foundation": true,
+    "first_run_diagnostics": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_14": {
+    "plugin_api_version": "2.0",
+    "plugin_runtime": true,
+    "permission_enforcement": true,
+    "path_isolation": true,
+    "lifecycle_hooks": true,
+    "crash_isolation": true,
+    "automatic_disable_after_failures": true,
+    "provider_plugins": true,
+    "tool_plugins": true,
+    "trigger_plugins": true,
+    "ui_panel_contributions": true,
+    "example_plugins": true,
+    "stable_gate_locked": true
+  },
+  "v2_rc_15": {
+    "governance_roles": true,
+    "governance_policy": true,
+    "decision_records": true,
+    "waivers": true,
+    "evidence_registry": true,
+    "tamper_evident_audit_chain": true,
+    "release_signoff": true,
+    "retention_policy": true,
+    "release_eligibility": true,
+    "stable_acceptance_binding": true,
+    "final_user_acceptance_required": true,
+    "explicit_user_approval_required": true,
+    "stable_gate_locked": true
+  },
+  "pre_test_integration_audit": {
+    "system_wiring_audit": true,
+    "section_status_report": true,
+    "communication_graph": true,
+    "machine_readable_audit": true,
+    "stable_gate_locked": true
+  },
+  "pre_stable_context_help": {
+    "global_info_icons": true,
+    "buttons": true,
+    "checkboxes": true,
+    "selects": true,
+    "headings": true,
+    "keyboard_focus": true,
+    "detailed_high_risk_help": true,
+    "stable_gate_locked": true
+  },
+  "documentation_polish": {
+    "architecture_documented": true,
+    "cross_module_flows_documented": true,
+    "changelog_policy": true,
+    "stable_gate_locked": true
+  },
+  "release": {
+    "channel": "stable",
+    "status": "runtime_stability_hotfix",
+    "validationStatus": "real_browser_retest_pending",
+    "finalValidationPending": true,
+    "stableGateUnlocked": false
+  },
+  "stable_gate_locked": true,
+  "v2_1_alpha_1": {
+    "embedded_kit_engine_contracts": true,
+    "universal_provider_sdk_contracts": true,
+    "builtin_provider_manifests": [
+      "openai",
+      "anthropic",
+      "gemini",
+      "xai",
+      "groq",
+      "cursor",
+      "opencode",
+      "ollama",
+      "openai-compatible"
+    ],
+    "pixel_office_v2_contracts": true,
+    "carry_over_gaps_documented": true,
+    "one_click_desktop_target": true
+  },
+  "v2_1_alpha_2": {
+    "kit_engine_runtime": true,
+    "kit_version_detection": true,
+    "skill_discovery": true,
+    "command_discovery": true,
+    "workflow_discovery": true,
+    "capability_discovery": true,
+    "composition_discovery": true,
+    "project_stack_discovery": true,
+    "capability_resolution": true,
+    "project_sync": true,
+    "kit_validation": true
+  },
+  "embeddedKit": {
+    "mode": "single-source",
+    "path": "engine/ai-development-kit",
+    "version": "3.5.5",
+    "developerOverrideOnly": true
+  },
+  "v2_1_alpha_3": {
+    "real_kit_embedded": true,
+    "single_source_repository": true,
+    "kit_settings_panel": true,
+    "bridge_kit_actions": true,
+    "skills_hub_embedded_source": true,
+    "developer_override_only_external_path": true
+  },
+  "v2_1_alpha_4": {
+    "universal_provider_runtime": true,
+    "registered_providers": [
+      "openai",
+      "anthropic",
+      "gemini",
+      "xai",
+      "groq",
+      "cursor",
+      "opencode",
+      "ollama",
+      "openai-compatible"
+    ],
+    "executable_foundations": [
+      "openai",
+      "groq",
+      "cursor",
+      "opencode",
+      "ollama",
+      "openai-compatible"
+    ],
+    "native_pending": [
+      "anthropic",
+      "gemini",
+      "xai"
+    ],
+    "health_checks": true,
+    "model_discovery": true,
+    "capability_router": true,
+    "failover_max_attempts": 3,
+    "secret_values_exposed_to_ui": false,
+    "settings_panel": true
+  },
+  "v2_1_alpha_5": {
+    "native_adapters": [
+      "anthropic",
+      "gemini",
+      "xai"
+    ],
+    "normalized_tools": true,
+    "normalized_usage": true,
+    "structured_output_gemini": true,
+    "provider_pinning_foundation": true,
+    "unified_streaming": "scheduled_alpha_6"
+  },
+  "v2_1_alpha_6": {
+    "kit_changelog_directory": "engine/ai-development-kit/changelog",
+    "unified_provider_streaming": true,
+    "stream_events": [
+      "started",
+      "text.delta",
+      "tool.started",
+      "tool.delta",
+      "tool.completed",
+      "usage",
+      "completed",
+      "cancelled",
+      "failed"
+    ],
+    "stream_cancellation": true,
+    "native_streaming": [
+      "anthropic",
+      "gemini",
+      "xai"
+    ],
+    "bridge_broadcast": true,
+    "stream_monitor_ui": true
+  },
+  "v2_1_alpha_7": {
+    "agent_provider_pinning_ui": true,
+    "agent_model_pinning": true,
+    "policy_preferences": [
+      "balanced",
+      "quality",
+      "cost",
+      "latency"
+    ],
+    "fallback_policy": true,
+    "routing_evidence": true,
+    "policy_persistence": true
+  },
+  "v2_1_alpha_8": {
+    "secure_provider_credentials": true,
+    "windows_dpapi_target": true,
+    "credential_ui": true,
+    "connection_test_ui": true,
+    "autonomous_provider_planner": true,
+    "kit_capability_driven_agent_selection": true,
+    "provider_pin_policy_integration": true,
+    "provider_telemetry_ledger_foundation": true
+  },
+  "v2_1_alpha_9": {
+    "account_connections": [
+      "openai-codex",
+      "claude-code",
+      "gemini-cli",
+      "cursor-cli",
+      "github-cli"
+    ],
+    "browser_login_foundation": true,
+    "api_fallback": true,
+    "github_account_connection": true,
+    "autonomous_execution_loop": true,
+    "agent_dispatch": true,
+    "provider_retry_failover": true,
+    "telemetry_write_foundation": true,
+    "final_result_aggregation": true
+  },
+  "v2_1_alpha_10": {
+    "mission_retry_policy": true,
+    "agent_retry_policy": true,
+    "approval_gates": true,
+    "test_stage": true,
+    "review_stage": true,
+    "mission_history": true,
+    "mission_history_ui": true,
+    "provider_quality_feedback": true
+  },
+  "v2_1_alpha_11": {
+    "adaptive_quality_routing": true,
+    "provider_performance_dashboard": true,
+    "mission_evidence_bundle": true,
+    "approval_inbox": true,
+    "mission_event_journal": true,
+    "execution_replay": true
+  },
+  "v2_1_alpha_12": {
+    "mission_runner_ui": true,
+    "mission_composer": true,
+    "live_progress": true,
+    "approval_resume": true,
+    "result_viewer": true,
+    "evidence_viewer": true,
+    "replay_viewer": true,
+    "primary_give_task_receive_result_workflow": true
+  },
+  "v2_1_alpha_13": {
+    "project_docs_intelligence": true,
+    "existing_docs_to_mission_queue": true,
+    "user_brief_to_docs": true,
+    "roadmap_progress_project_state": true,
+    "manual_mission_progress_sync": true,
+    "status_vocabulary": [
+      "VERIFIED_DONE",
+      "PARTIAL",
+      "TODO",
+      "BLOCKED",
+      "DEFERRED",
+      "UNKNOWN",
+      "DECISION_REQUIRED"
+    ]
+  },
+  "releaseTrain": {
+    "current": "2.1.9",
+    "remainingPlannedReleases": 0,
+    "next": null,
+    "stableTarget": "2.1.9",
+    "complete": true
+  },
+  "v2_1_alpha_14": {
+    "real_project_file_tools": true,
+    "real_project_command_tools": true,
+    "tool_call_loop": true,
+    "git_diff_evidence": true,
+    "test_detection": true,
+    "worktree_isolation_foundation": true,
+    "sensitive_file_guard": true,
+    "destructive_command_guard": true,
+    "mission_runner_real_project_mode": true
+  },
+  "v2_1_alpha_15": {
+    "pixi_renderer": true,
+    "original_sprite_system": true,
+    "sprite_states": [
+      "idle",
+      "thinking",
+      "walking",
+      "working",
+      "typing",
+      "testing",
+      "talking",
+      "blocked",
+      "done"
+    ],
+    "camera_pan": true,
+    "camera_zoom": true,
+    "station_layout": true,
+    "hit_testing": true,
+    "terminal_integration": true
+  },
+  "v2_1_alpha_16": {
+    "grid_pathfinding": true,
+    "walking_interpolation": true,
+    "four_direction_facing": true,
+    "runtime_event_mapping": true,
+    "live_station_retargeting": true,
+    "provider_stream_event_mapping": true,
+    "mission_event_mapping": true,
+    "agent_message_animation": true
+  },
+  "v2_1_alpha_17": {
+    "one_click_runtime": true,
+    "bridge_web_supervisor": true,
+    "embedded_kit_verification": true,
+    "last_project_restore": true,
+    "provider_cli_discovery": true,
+    "browser_launch": true,
+    "health_probes": true,
+    "graceful_shutdown": true,
+    "windows_launchers": [
+      "office-desktop.cmd",
+      "office-desktop.ps1"
+    ],
+    "native_executable_packaging": "pending_rc_packaging"
+  },
+  "v2_1_alpha_18": {
+    "heading_keys_localized": true,
+    "v2_1_panels_localized": [
+      "tr",
+      "en",
+      "de",
+      "ru"
+    ],
+    "single_open_tooltips": true,
+    "tooltip_collision_handling": true,
+    "help_density_reduced": true,
+    "readability_floor": true,
+    "ui_copy_audit": true
+  },
+  "v2_1_beta_1": {
+    "unified_readiness": true,
+    "integration_journal": true,
+    "mission_consistency_validation": true,
+    "unified_event_normalizer": true,
+    "beta_gate": true,
+    "real_windows_validation": "pending"
+  },
+  "v2_1_beta_2": {
+    "callme_profile": true,
+    "callme_stack_detection": true,
+    "read_only_validation": true,
+    "git_stability_check": true,
+    "laravel_test_validation": true,
+    "frontend_typecheck_build_validation": true,
+    "windows_one_command_gate": true,
+    "validation_ui": true,
+    "real_windows_execution": "pending"
+  },
+  "v2_1_rc_1": {
+    "credential_stdin_dpapi": true,
+    "central_operation_policy": true,
+    "runtime_backup_restore": true,
+    "backup_checksums": true,
+    "last_known_good": true,
+    "runtime_schema_migrations": true,
+    "upgrade_compatibility": true,
+    "rc1_gate": true,
+    "real_windows_validation": "pending"
+  },
+  "v2_1_rc_2": {
+    "version_consistency": true,
+    "package_integrity_manifest": true,
+    "release_evidence_bundle": true,
+    "stable_promotion_policy": true,
+    "final_acceptance_ui": true,
+    "rc2_gate": true,
+    "windows_final_acceptance_runner": true,
+    "stable_promotion": "blocked_until_real_evidence_complete"
+  },
+  "v2_1_stable": {
+    "artifact_created": true,
+    "embedded_kit": true,
+    "mission_runner": true,
+    "project_docs_intelligence": true,
+    "real_project_execution": true,
+    "pixel_office_v2": true,
+    "desktop_runtime": true,
+    "security_recovery": true,
+    "release_integrity": true,
+    "real_windows_final_acceptance": "pending",
+    "real_callme_validation": "pending",
+    "npm_audit_review": "pending",
+    "manual_security_review": "pending"
+  },
+  "v2_1_1_hotfix": {
+    "typecheck_errors_addressed_from_real_windows_log": 35,
+    "files_reported": 13,
+    "credential_store_api_compatibility": true,
+    "provider_session_signature": true,
+    "kit_templates_excluded_from_office_typecheck": true,
+    "office_store_agent_access": true,
+    "pixel_office_live_store_fixed": true,
+    "replay_typing_fixed": true,
+    "final_result_typing_fixed": true,
+    "verified_done_semantics_hardened": true,
+    "real_windows_typecheck_retest": "pending"
+  },
+  "v2_1_2_hotfix": {
+    "windows_typecheck": "pass_user_evidence",
+    "windows_production_build": "pass_user_evidence",
+    "nested_npm_windows_runner_fixed": true,
+    "dynamic_version_consistency": true,
+    "dynamic_stable_promotion_smoke": true,
+    "css_autoprefixer_alignment_cleanup": true,
+    "rc2_retest": "pending"
+  },
+  "v2_1_3_hotfix": {
+    "provider_credentials_dpapi": "powershell_securestring_currentuser_dpapi",
+    "autonomous_agent_capability_coverage": true,
+    "pixel_pathfinding_fallback": true,
+    "ui_copy_audit_false_positive_fix": true,
+    "targeted_regression_smoke": true,
+    "rc2_retest": "pending"
+  },
+  "v2_1_4_hotfix": {
+    "windows_typecheck": "pass_user_evidence",
+    "windows_production_build": "pass_user_evidence",
+    "beta_gate": "pass_user_evidence_17_of_17",
+    "rc1_gate": "pass_user_evidence",
+    "rc2_gate": "pass_user_evidence_4_of_4",
+    "callme_cli_top_level_await_fixed": true,
+    "callme_cli_smoke": true,
+    "real_callme_validation": "retest_pending",
+    "npm_audit_review": "pending"
+  },
+  "v2_1_5_hotfix": {
+    "windows_typecheck": "pass_user_evidence",
+    "windows_production_build": "pass_user_evidence",
+    "beta_gate": "pass_user_evidence_17_of_17",
+    "rc1_gate": "pass_user_evidence_4_of_4_on_v2_1_4",
+    "rc2_gate": "pass_user_evidence_4_of_4",
+    "callme_laravel_tests": "327_passed_1_skipped_1358_assertions",
+    "callme_frontend_build": "pass_user_evidence",
+    "callme_head_stable": "pass_user_evidence",
+    "tracked_git_stability_semantics": true,
+    "untracked_runtime_artifacts_non_blocking": true,
+    "real_callme_retest": "pending",
+    "npm_audit_review": "pending"
+  },
+  "v2_1_6_hotfix": {
+    "tracked_worktree_diff_fingerprint": true,
+    "staged_diff_fingerprint": true,
+    "already_dirty_tracked_mutation_detection": true,
+    "untracked_runtime_artifacts_non_blocking": true,
+    "callme_git_stability_smoke_fixed": true,
+    "git_fingerprint_smoke": true,
+    "real_callme_validation": "retest_pending"
+  },
+  "v2_1_7_hotfix": {
+    "real_callme_validation": "pass_user_evidence",
+    "npm_audit_before_hotfix": "2_vulnerabilities_1_moderate_1_high",
+    "audit_root_cause": "postcss_le_8_5_22_via_next",
+    "next_version_retained": "^15.2.0",
+    "postcss_override": "8.5.28",
+    "npm_audit_retest": "pending",
+    "manual_security_review": "pending"
+  },
+  "v2_1_8_hotfix": {
+    "real_windows_desktop_launch_v2_1_7": "failed_spawn_EINVAL",
+    "windows_cmd_wrapper": true,
+    "env_local_loader": true,
+    "clean_install_launcher": true,
+    "desktop_windows_launch_smoke": true,
+    "real_desktop_launch_retest": "pending"
+  },
+  "v2_1_9_hotfix": {
+    "pixel_office_max_update_depth_fixed": true,
+    "global_context_help_unmount_race_fixed": true,
+    "project_path_optional": true,
+    "default_project_removed": true,
+    "last_project_restore_preserved": true,
+    "callme_role": "acceptance_test_target_only",
+    "real_browser_retest": "pending"
+  }
+}

@@ -1,0 +1,10 @@
+---
+description: Check dependency and architecture conflicts before installing capabilities
+alwaysApply: true
+---
+
+Before adding a modular capability:
+- inspect existing packages/config
+- run conflict detection
+- do not add duplicate framework/ORM/auth/UI/animation systems without intent
+- treat blockers as architecture decisions, not installation errors

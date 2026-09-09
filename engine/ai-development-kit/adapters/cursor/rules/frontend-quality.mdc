@@ -1,0 +1,16 @@
+---
+description: Frontend changes should respect performance budgets, accessibility and visual regression baselines
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.blade.php"
+---
+
+For meaningful frontend changes:
+- check bundle/performance impact
+- preserve accessibility and keyboard behavior
+- respect reduced-motion preferences
+- update visual baselines only for intentional changes
+- do not auto-accept screenshot diffs

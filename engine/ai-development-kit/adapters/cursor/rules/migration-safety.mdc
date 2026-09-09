@@ -1,0 +1,13 @@
+---
+description: Analyze risky migrations before execution
+globs:
+  - "database/migrations/**"
+  - "prisma/**"
+  - "**/*.sql"
+---
+
+- never run destructive reset/drop-all migration commands in production
+- analyze DROP, rename, type changes, NOT NULL changes, unique/index and FK changes
+- prefer expand/migrate/contract for compatibility-sensitive production changes
+- do not auto-run destructive migrations after generating them
+- separate large backfills when practical

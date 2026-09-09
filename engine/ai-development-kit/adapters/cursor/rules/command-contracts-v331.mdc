@@ -1,0 +1,23 @@
+---
+description: AI Development Kit v3.3.1 command semantics and durable handoff
+alwaysApply: true
+---
+
+Commands follow `shared/contracts/COMMAND_CONTRACTS.md`.
+
+Recognize:
+status
+sync state
+review project
+fix next
+validate
+continue
+decide
+handoff
+discover project
+sync docs
+
+Use risk-based next action selection.
+Persist selected_reason.
+Resume interrupted work from Durable Handoff v2.
+Failed required validation prevents VERIFIED_DONE.

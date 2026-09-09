@@ -1,0 +1,11 @@
+---
+description: Behavior changes should be covered by risk-appropriate tests
+alwaysApply: true
+---
+
+For meaningful behavior changes:
+- identify the cheapest effective test level
+- add regression coverage for bugs
+- include negative auth/authorization tests when relevant
+- include cross-tenant denial tests for tenant-sensitive code
+- avoid E2E when a stable lower-level test is sufficient

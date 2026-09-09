@@ -1,0 +1,28 @@
+{
+  "id": "monorepo.pnpm",
+  "version": "1.0",
+  "category": "monorepo",
+  "aliases": [
+    "pnpm",
+    "pnpm-workspace"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "pnpm-workspace"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-pnpm-workspace.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "pnpm-workspace.yaml"
+    ]
+  }
+}

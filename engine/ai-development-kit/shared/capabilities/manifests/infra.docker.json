@@ -1,0 +1,25 @@
+{
+  "id": "infra.docker",
+  "version": "1.0",
+  "category": "infra",
+  "aliases": [
+    "docker"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "docker",
+    "docker-compose",
+    "deployment"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/generate-production-docker.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

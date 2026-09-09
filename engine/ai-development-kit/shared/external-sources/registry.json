@@ -1,0 +1,396 @@
+{
+  "version": "2.0",
+  "policy": {
+    "default": "evaluate-before-use",
+    "license_check_required_for_code_reuse": true,
+    "prefer_existing_project_components": true,
+    "prefer_existing_project_dependencies": true,
+    "max_decorative_libraries_per_feature_default": 1
+  },
+  "categories": {
+    "core-primitives": {
+      "purpose": "accessible foundational interaction primitives",
+      "preferred": [
+        "shadcn-ui",
+        "radix-ui"
+      ]
+    },
+    "application-ui": {
+      "purpose": "forms, dashboards, navigation, cards, tables and general product UI",
+      "preferred": [
+        "existing-project",
+        "shadcn-ui",
+        "flowbite",
+        "hyperui",
+        "tailwind-plus"
+      ]
+    },
+    "marketing-ui": {
+      "purpose": "landing pages, marketing sections and conversion-focused layouts",
+      "preferred": [
+        "magic-ui",
+        "aceternity-ui",
+        "react-bits",
+        "hyperui",
+        "tailwind-plus"
+      ]
+    },
+    "animated-ui": {
+      "purpose": "creative animated components and effects",
+      "preferred": [
+        "react-bits",
+        "magic-ui",
+        "animate-ui",
+        "aceternity-ui",
+        "motion"
+      ]
+    },
+    "advanced-motion": {
+      "purpose": "complex timelines, SVG, scroll-driven choreography",
+      "preferred": [
+        "gsap",
+        "motion"
+      ]
+    },
+    "3d-webgl": {
+      "purpose": "3D, shaders, canvas and GPU-heavy visual effects",
+      "preferred": [
+        "three-js",
+        "react-weather-effects"
+      ]
+    },
+    "reference-tools": {
+      "purpose": "visual inspiration, prototyping and interaction references",
+      "preferred": [
+        "nordcraft"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "shadcn-ui",
+      "name": "shadcn/ui",
+      "url": "https://ui.shadcn.com/",
+      "type": "open-code-component-system",
+      "categories": [
+        "core-primitives",
+        "application-ui"
+      ],
+      "frameworks": [
+        "react",
+        "nextjs"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "integration": [
+        "registry",
+        "copy-own-code"
+      ],
+      "license": "permissive-open-source",
+      "license_class": "open",
+      "priority": "foundation"
+    },
+    {
+      "id": "radix-ui",
+      "name": "Radix UI",
+      "url": "https://www.radix-ui.com/",
+      "type": "accessible-primitives",
+      "categories": [
+        "core-primitives",
+        "application-ui"
+      ],
+      "frameworks": [
+        "react"
+      ],
+      "styles": [
+        "unstyled",
+        "themes"
+      ],
+      "integration": [
+        "package"
+      ],
+      "license_class": "open",
+      "priority": "foundation"
+    },
+    {
+      "id": "magic-ui",
+      "name": "Magic UI",
+      "url": "https://magicui.design/",
+      "type": "animated-component-distribution",
+      "categories": [
+        "animated-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "react",
+        "nextjs"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "animation": [
+        "motion"
+      ],
+      "integration": [
+        "copy-adapt",
+        "registry"
+      ],
+      "license_class": "open-free-tier",
+      "paid_variant": "Magic UI Pro",
+      "priority": "high"
+    },
+    {
+      "id": "aceternity-ui",
+      "name": "Aceternity UI",
+      "url": "https://ui.aceternity.com/",
+      "type": "animated-components-and-templates",
+      "categories": [
+        "animated-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "react",
+        "nextjs"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "animation": [
+        "motion"
+      ],
+      "integration": [
+        "registry",
+        "copy-adapt",
+        "licensed-template"
+      ],
+      "license_class": "mixed-free-paid",
+      "priority": "high"
+    },
+    {
+      "id": "react-bits",
+      "name": "React Bits",
+      "url": "https://reactbits.dev/",
+      "type": "animated-component-distribution",
+      "categories": [
+        "animated-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "react",
+        "nextjs"
+      ],
+      "integration": [
+        "copy-adapt",
+        "registry"
+      ],
+      "license_class": "mixed-free-paid",
+      "priority": "high"
+    },
+    {
+      "id": "animate-ui",
+      "name": "Animate UI",
+      "url": "https://animate-ui.com/",
+      "type": "animated-primitives",
+      "categories": [
+        "animated-ui",
+        "core-primitives"
+      ],
+      "frameworks": [
+        "react"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "animation": [
+        "motion"
+      ],
+      "integration": [
+        "shadcn-registry",
+        "copy-adapt"
+      ],
+      "license_class": "open-source",
+      "priority": "high"
+    },
+    {
+      "id": "hyperui",
+      "name": "HyperUI",
+      "url": "https://hyperui.dev/",
+      "type": "tailwind-copy-paste-components",
+      "categories": [
+        "application-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "html",
+        "react-adaptable",
+        "blade-adaptable"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "integration": [
+        "copy-adapt"
+      ],
+      "license_class": "open-free",
+      "priority": "medium"
+    },
+    {
+      "id": "flowbite",
+      "name": "Flowbite",
+      "url": "https://flowbite.com/",
+      "type": "tailwind-component-library",
+      "categories": [
+        "application-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "html",
+        "react",
+        "vue",
+        "other-integrations"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "integration": [
+        "package",
+        "copy-adapt"
+      ],
+      "license": "MIT-core",
+      "license_class": "open-core-plus-paid",
+      "priority": "medium"
+    },
+    {
+      "id": "tailwind-plus",
+      "name": "Tailwind Plus",
+      "url": "https://tailwindcss.com/plus",
+      "type": "paid-components-and-templates",
+      "categories": [
+        "application-ui",
+        "marketing-ui"
+      ],
+      "frameworks": [
+        "html",
+        "react",
+        "vue",
+        "framework-adaptable"
+      ],
+      "styles": [
+        "tailwind"
+      ],
+      "integration": [
+        "licensed-copy",
+        "licensed-template",
+        "elements-package"
+      ],
+      "license_class": "paid-commercial",
+      "requires_valid_license": true,
+      "priority": "licensed"
+    },
+    {
+      "id": "motion",
+      "name": "Motion",
+      "url": "https://motion.dev/",
+      "type": "animation-engine",
+      "categories": [
+        "animated-ui",
+        "advanced-motion"
+      ],
+      "frameworks": [
+        "react",
+        "javascript",
+        "vue"
+      ],
+      "integration": [
+        "package"
+      ],
+      "license_class": "library-license-check",
+      "priority": "engine"
+    },
+    {
+      "id": "gsap",
+      "name": "GSAP",
+      "url": "https://gsap.com/",
+      "type": "advanced-animation-engine",
+      "categories": [
+        "advanced-motion"
+      ],
+      "frameworks": [
+        "javascript",
+        "react",
+        "nextjs",
+        "vue",
+        "web"
+      ],
+      "integration": [
+        "package"
+      ],
+      "license_class": "free-standard-commercial-usage",
+      "priority": "specialized"
+    },
+    {
+      "id": "three-js",
+      "name": "Three.js",
+      "url": "https://threejs.org/",
+      "type": "3d-webgl-engine",
+      "categories": [
+        "3d-webgl"
+      ],
+      "frameworks": [
+        "javascript",
+        "react-via-ecosystem"
+      ],
+      "integration": [
+        "package",
+        "adapt-examples"
+      ],
+      "license": "MIT",
+      "license_class": "open",
+      "priority": "specialized"
+    },
+    {
+      "id": "react-weather-effects",
+      "name": "React Weather Effects",
+      "url": "https://github.com/rauschermate/react-weather-effects",
+      "type": "specialized-webgl-effects",
+      "categories": [
+        "3d-webgl",
+        "animated-ui"
+      ],
+      "frameworks": [
+        "react",
+        "nextjs"
+      ],
+      "technologies": [
+        "three.js",
+        "webgl",
+        "gsap"
+      ],
+      "integration": [
+        "adapt-source"
+      ],
+      "license": "MIT",
+      "license_class": "open",
+      "priority": "specialized"
+    },
+    {
+      "id": "nordcraft",
+      "name": "Nordcraft",
+      "url": "https://nordcraft.com/",
+      "type": "visual-builder-reference",
+      "categories": [
+        "reference-tools"
+      ],
+      "frameworks": [
+        "web"
+      ],
+      "integration": [
+        "reference",
+        "export-if-licensed-and-compatible"
+      ],
+      "license_class": "product-terms",
+      "priority": "reference"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "ci.github-actions",
+  "version": "1.0",
+  "category": "ci",
+  "aliases": [
+    "github-actions",
+    "ci-cd",
+    "ci"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "ci-cd",
+    "git",
+    "testing"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/generate-cicd.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      ".github/workflows"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "frontend.mobile.expo",
+  "version": "1.0",
+  "category": "frontend.mobile",
+  "aliases": [
+    "expo",
+    "react-native-expo"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "react-native",
+    "expo",
+    "mobile-ui",
+    "navigation",
+    "mobile-storage",
+    "mobile-security"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-expo.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "package.json",
+      "app.json"
+    ]
+  }
+}

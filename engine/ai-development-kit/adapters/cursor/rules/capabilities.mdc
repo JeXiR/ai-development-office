@@ -1,0 +1,12 @@
+---
+description: Modular capabilities must be installed deliberately and minimally
+alwaysApply: true
+---
+
+When adding a new project capability:
+- resolve the minimum required module
+- inspect existing dependencies first
+- do not install overlapping libraries
+- never overwrite real secrets
+- do not run destructive migrations automatically
+- sync project skills after architecture/config changes

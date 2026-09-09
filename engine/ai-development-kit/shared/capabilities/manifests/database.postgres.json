@@ -1,0 +1,28 @@
+{
+  "id": "database.postgres",
+  "version": "1.0",
+  "category": "database",
+  "aliases": [
+    "postgres",
+    "postgresql"
+  ],
+  "depends_on": [],
+  "conflicts_with": [
+    "database.mysql"
+  ],
+  "skills": [
+    "postgres",
+    "migrations",
+    "database-performance"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build / cache
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Generated release / audit artifacts
+release-integrity.json
+docs/*-audit.json
+updates/
+
+# Local Office registry copies (live data belongs in %LOCALAPPDATA%)
+/office.projects.json
+/projects.json
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Accidental leftovers
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Cursor / local tooling
+.cursor/

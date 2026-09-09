@@ -1,0 +1,26 @@
+{
+  "id": "infra.aws",
+  "version": "1.0",
+  "category": "infra",
+  "aliases": [
+    "aws"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "aws-foundations",
+    "aws-s3",
+    "aws-rds",
+    "aws-route53"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

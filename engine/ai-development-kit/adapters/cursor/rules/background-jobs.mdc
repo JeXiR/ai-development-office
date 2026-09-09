@@ -1,0 +1,18 @@
+---
+description: Critical background jobs must be retry-safe, idempotent, observable and tenant-safe
+globs:
+  - "app/Jobs/**"
+  - "app/Console/**"
+  - "routes/console.php"
+  - "**/*worker*"
+  - "**/*queue*"
+---
+
+For important async work:
+- assume duplicate delivery
+- define retry/backoff/timeout
+- protect external side effects with idempotency
+- restore tenant context explicitly
+- control concurrency where needed
+- define failed-job recovery
+- add observability and tests

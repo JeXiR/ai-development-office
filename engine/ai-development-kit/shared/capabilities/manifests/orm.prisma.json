@@ -1,0 +1,27 @@
+{
+  "id": "orm.prisma",
+  "version": "1.0",
+  "category": "orm",
+  "aliases": [
+    "prisma"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "prisma",
+    "migrations",
+    "postgres"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

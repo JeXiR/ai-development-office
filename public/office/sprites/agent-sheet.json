@@ -1,0 +1,435 @@
+{
+  "frames": {
+    "idle-0": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "idle-1": {
+      "frame": {
+        "x": 32,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_down-0": {
+      "frame": {
+        "x": 0,
+        "y": 40,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_down-1": {
+      "frame": {
+        "x": 32,
+        "y": 40,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_down-2": {
+      "frame": {
+        "x": 64,
+        "y": 40,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_down-3": {
+      "frame": {
+        "x": 96,
+        "y": 40,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_up-0": {
+      "frame": {
+        "x": 0,
+        "y": 80,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_up-1": {
+      "frame": {
+        "x": 32,
+        "y": 80,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_up-2": {
+      "frame": {
+        "x": 64,
+        "y": 80,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_up-3": {
+      "frame": {
+        "x": 96,
+        "y": 80,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_left-0": {
+      "frame": {
+        "x": 0,
+        "y": 120,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_left-1": {
+      "frame": {
+        "x": 32,
+        "y": 120,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_left-2": {
+      "frame": {
+        "x": 64,
+        "y": 120,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_left-3": {
+      "frame": {
+        "x": 96,
+        "y": 120,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_right-0": {
+      "frame": {
+        "x": 0,
+        "y": 160,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_right-1": {
+      "frame": {
+        "x": 32,
+        "y": 160,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_right-2": {
+      "frame": {
+        "x": 64,
+        "y": 160,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "walk_right-3": {
+      "frame": {
+        "x": 96,
+        "y": 160,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "sit-0": {
+      "frame": {
+        "x": 0,
+        "y": 200,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "sit-1": {
+      "frame": {
+        "x": 32,
+        "y": 200,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "typing-0": {
+      "frame": {
+        "x": 0,
+        "y": 240,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "typing-1": {
+      "frame": {
+        "x": 32,
+        "y": 240,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "typing-2": {
+      "frame": {
+        "x": 64,
+        "y": 240,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "typing-3": {
+      "frame": {
+        "x": 96,
+        "y": 240,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "planning-0": {
+      "frame": {
+        "x": 0,
+        "y": 280,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "planning-1": {
+      "frame": {
+        "x": 32,
+        "y": 280,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "reviewing-0": {
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "reviewing-1": {
+      "frame": {
+        "x": 32,
+        "y": 320,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "testing-0": {
+      "frame": {
+        "x": 0,
+        "y": 360,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "testing-1": {
+      "frame": {
+        "x": 32,
+        "y": 360,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "meeting-0": {
+      "frame": {
+        "x": 0,
+        "y": 400,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "meeting-1": {
+      "frame": {
+        "x": 32,
+        "y": 400,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "waiting-0": {
+      "frame": {
+        "x": 0,
+        "y": 440,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "waiting-1": {
+      "frame": {
+        "x": 32,
+        "y": 440,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "blocked-0": {
+      "frame": {
+        "x": 0,
+        "y": 480,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "blocked-1": {
+      "frame": {
+        "x": 32,
+        "y": 480,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "error-0": {
+      "frame": {
+        "x": 0,
+        "y": 520,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "error-1": {
+      "frame": {
+        "x": 32,
+        "y": 520,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "celebrate-0": {
+      "frame": {
+        "x": 0,
+        "y": 560,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "celebrate-1": {
+      "frame": {
+        "x": 32,
+        "y": 560,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "celebrate-2": {
+      "frame": {
+        "x": 64,
+        "y": 560,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    },
+    "celebrate-3": {
+      "frame": {
+        "x": 96,
+        "y": 560,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false
+    }
+  },
+  "meta": {
+    "app": "AI Development Office",
+    "version": "0.9.0",
+    "image": "agent-sheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 128,
+      "h": 600
+    },
+    "scale": "1"
+  }
+}

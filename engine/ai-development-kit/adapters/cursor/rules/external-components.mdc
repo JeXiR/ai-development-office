@@ -1,0 +1,17 @@
+---
+description: External component/effect sources must be evaluated before integration
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.blade.php"
+---
+
+When using external components/effects:
+- prefer approved sources in `shared/external-sources/registry.json`
+- check framework compatibility and existing project dependencies
+- check license before copying code
+- avoid dependency duplication
+- adapt to current design system
+- verify accessibility, reduced motion and performance

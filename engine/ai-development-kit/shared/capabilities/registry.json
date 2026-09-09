@@ -1,0 +1,360 @@
+{
+  "version": "1.0",
+  "capabilities": [
+    {
+      "id": "prisma",
+      "stacks": [
+        "nextjs",
+        "node",
+        "typescript"
+      ],
+      "packages": [
+        "prisma",
+        "@prisma/client"
+      ],
+      "install_type": "npm",
+      "post_install": [
+        "prisma-init"
+      ],
+      "skills": [
+        "prisma",
+        "postgres",
+        "migrations"
+      ]
+    },
+    {
+      "id": "shadcn-ui",
+      "stacks": [
+        "react",
+        "nextjs"
+      ],
+      "install_type": "npx",
+      "post_install": [
+        "shadcn-init"
+      ],
+      "skills": [
+        "design-system",
+        "component-reuse",
+        "responsive-ui",
+        "accessibility"
+      ]
+    },
+    {
+      "id": "motion",
+      "stacks": [
+        "react",
+        "nextjs"
+      ],
+      "packages": [
+        "motion"
+      ],
+      "install_type": "npm",
+      "skills": [
+        "animation",
+        "animation-decision"
+      ]
+    },
+    {
+      "id": "laravel-sanctum",
+      "stacks": [
+        "laravel"
+      ],
+      "packages": [
+        "laravel/sanctum"
+      ],
+      "install_type": "composer",
+      "post_install": [
+        "sanctum-publish"
+      ],
+      "skills": [
+        "authentication",
+        "authorization",
+        "laravel-api",
+        "security"
+      ]
+    },
+    {
+      "id": "redis",
+      "stacks": [
+        "laravel",
+        "node",
+        "nextjs"
+      ],
+      "install_type": "conditional",
+      "skills": [
+        "caching",
+        "queues",
+        "background-jobs"
+      ]
+    },
+    {
+      "id": "laravel-s3",
+      "stacks": [
+        "laravel"
+      ],
+      "packages": [
+        "league/flysystem-aws-s3-v3"
+      ],
+      "install_type": "composer",
+      "skills": [
+        "aws-foundations",
+        "aws-s3",
+        "security"
+      ]
+    },
+    {
+      "id": "laravel-queue-database",
+      "stacks": [
+        "laravel"
+      ],
+      "install_type": "artisan",
+      "post_install": [
+        "queue-table"
+      ],
+      "skills": [
+        "queues",
+        "background-jobs"
+      ]
+    },
+    {
+      "id": "laravel-cache-database",
+      "stacks": [
+        "laravel"
+      ],
+      "install_type": "config",
+      "skills": [
+        "caching"
+      ]
+    },
+    {
+      "id": "expo-secure-store",
+      "stacks": [
+        "expo"
+      ],
+      "packages": [
+        "expo-secure-store"
+      ],
+      "install_type": "expo",
+      "skills": [
+        "mobile-storage",
+        "mobile-auth",
+        "mobile-security"
+      ]
+    },
+    {
+      "id": "expo-notifications",
+      "stacks": [
+        "expo"
+      ],
+      "packages": [
+        "expo-notifications"
+      ],
+      "install_type": "expo",
+      "skills": [
+        "notifications",
+        "permissions",
+        "mobile-security"
+      ]
+    },
+    {
+      "id": "sentry-web",
+      "stacks": [
+        "nextjs",
+        "react",
+        "laravel"
+      ],
+      "install_type": "conditional",
+      "skills": [
+        "error-monitoring",
+        "release-observability",
+        "security"
+      ]
+    },
+    {
+      "id": "sentry-expo",
+      "stacks": [
+        "expo"
+      ],
+      "install_type": "conditional",
+      "skills": [
+        "error-monitoring",
+        "mobile-observability",
+        "release-observability"
+      ]
+    },
+    {
+      "id": "opentelemetry",
+      "stacks": [
+        "laravel",
+        "nextjs",
+        "node"
+      ],
+      "install_type": "conditional",
+      "skills": [
+        "opentelemetry",
+        "structured-logging",
+        "observability-bootstrap"
+      ]
+    },
+    {
+      "id": "openapi-typescript",
+      "stacks": [
+        "nextjs",
+        "react",
+        "typescript"
+      ],
+      "packages": [
+        "openapi-typescript"
+      ],
+      "install_type": "npm-dev",
+      "skills": [
+        "api-contract-layer",
+        "openapi",
+        "typed-api-client",
+        "contract-testing"
+      ]
+    },
+    {
+      "id": "image-processing-node",
+      "stacks": [
+        "nextjs",
+        "node"
+      ],
+      "packages": [
+        "sharp"
+      ],
+      "install_type": "npm",
+      "skills": [
+        "media-processing",
+        "image-optimization",
+        "file-media-pipeline"
+      ]
+    },
+    {
+      "id": "aws-s3-sdk-node",
+      "stacks": [
+        "nextjs",
+        "node"
+      ],
+      "packages": [
+        "@aws-sdk/client-s3",
+        "@aws-sdk/s3-request-presigner"
+      ],
+      "install_type": "npm",
+      "skills": [
+        "storage-abstraction",
+        "private-file-access",
+        "aws-s3",
+        "security"
+      ]
+    },
+    {
+      "id": "playwright",
+      "stacks": [
+        "nextjs",
+        "react"
+      ],
+      "packages": [
+        "@playwright/test"
+      ],
+      "install_type": "npm-dev",
+      "skills": [
+        "visual-regression-testing",
+        "accessibility-audit-automation"
+      ]
+    },
+    {
+      "id": "axe-playwright",
+      "stacks": [
+        "nextjs",
+        "react"
+      ],
+      "packages": [
+        "@axe-core/playwright"
+      ],
+      "install_type": "npm-dev",
+      "skills": [
+        "accessibility-audit-automation",
+        "keyboard-audit"
+      ]
+    }
+  ],
+  "nestjs": {
+    "name": "NestJS",
+    "category": "backend",
+    "status": "ready",
+    "scaffold": "scripts/scaffold-nestjs.ps1",
+    "templates": [
+      "templates/nestjs-api"
+    ],
+    "skills": [
+      "nestjs"
+    ],
+    "validates": [
+      "package.json",
+      "src/main.ts"
+    ]
+  },
+  "pnpm-workspace": {
+    "name": "pnpm Workspace",
+    "category": "monorepo",
+    "status": "ready",
+    "scaffold": "scripts/scaffold-pnpm-workspace.ps1",
+    "templates": [
+      "templates/pnpm-workspace"
+    ],
+    "skills": [
+      "pnpm-workspace"
+    ],
+    "validates": [
+      "pnpm-workspace.yaml"
+    ]
+  },
+  "turborepo": {
+    "name": "Turborepo",
+    "category": "monorepo",
+    "status": "ready",
+    "scaffold": "scripts/scaffold-turborepo.ps1",
+    "templates": [
+      "templates/turborepo"
+    ],
+    "skills": [
+      "turborepo"
+    ],
+    "validates": [
+      "turbo.json"
+    ]
+  },
+  "worker-runtime": {
+    "name": "Worker Runtime",
+    "category": "backend",
+    "status": "ready",
+    "scaffold": "scripts/scaffold-worker.ps1",
+    "templates": [
+      "templates/worker-runtime"
+    ],
+    "skills": [
+      "worker-runtime"
+    ],
+    "validates": [
+      "apps/worker"
+    ]
+  },
+  "redis": {
+    "name": "Redis",
+    "category": "database",
+    "status": "ready",
+    "scaffold": "scripts/scaffold-redis.ps1",
+    "templates": [
+      "templates/redis"
+    ],
+    "skills": [
+      "redis"
+    ],
+    "validates": [
+      "docker-compose.yml"
+    ]
+  },
+  "deprecated_in": "3.5.0",
+  "canonical_catalog": "shared/capabilities/catalog.json"
+}

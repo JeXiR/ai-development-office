@@ -1,0 +1,3 @@
+environment  = "staging"
+project_name = "app"
+aws_region   = "eu-central-1"

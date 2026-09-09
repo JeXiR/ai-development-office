@@ -1,0 +1,12 @@
+{
+  "global": {
+    "max_initial_js_kb": 300,
+    "max_css_kb": 120,
+    "max_image_kb": 800,
+    "max_requests": 80,
+    "lcp_ms": 2500,
+    "inp_ms": 200,
+    "cls": 0.1
+  },
+  "routes": {}
+}

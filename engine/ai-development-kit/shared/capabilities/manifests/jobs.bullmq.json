@@ -1,0 +1,28 @@
+{
+  "id": "jobs.bullmq",
+  "version": "1.0",
+  "category": "jobs",
+  "aliases": [
+    "bullmq"
+  ],
+  "depends_on": [
+    "runtime.node",
+    "cache.redis"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "queues",
+    "background-jobs",
+    "redis"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

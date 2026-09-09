@@ -1,0 +1,11 @@
+---
+description: New framework projects should use native scaffolders and be analyzed after generation
+alwaysApply: true
+---
+
+For new Laravel, Next.js or Expo projects:
+- prefer official/native framework scaffolding
+- do not treat placeholder template directories as full applications
+- analyze the actual generated repository
+- synchronize selective skills after scaffold
+- run baseline validation before substantial feature work

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Development Office Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "timestamp",
+    "project_id",
+    "actor",
+    "event_type",
+    "status"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "id",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "skill": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "event_type": {
+      "enum": [
+        "command",
+        "task_started",
+        "task_progress",
+        "task_completed",
+        "finding",
+        "decision_required",
+        "waiting",
+        "blocked",
+        "error",
+        "validation",
+        "file_activity",
+        "handoff"
+      ]
+    },
+    "status": {
+      "enum": [
+        "idle",
+        "reading",
+        "planning",
+        "working",
+        "reviewing",
+        "testing",
+        "waiting",
+        "blocked",
+        "done",
+        "error"
+      ]
+    },
+    "task": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "file": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "severity": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "progress_percent": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  }
+}

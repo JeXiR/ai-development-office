@@ -1,0 +1,16 @@
+---
+description: Infrastructure changes require plan review, least privilege and environment isolation
+globs:
+  - "infrastructure/**"
+  - "**/*.tf"
+  - "**/*.tfvars"
+---
+
+For IaC:
+- separate dev/staging/prod state
+- do not commit secrets
+- review plan before apply
+- flag destroy/replace/public exposure
+- use least-privilege IAM
+- protect production databases/storage
+- update infrastructure docs and PROGRESS.md after material changes

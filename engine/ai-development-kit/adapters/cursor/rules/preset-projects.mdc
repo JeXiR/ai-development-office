@@ -1,0 +1,10 @@
+---
+description: Preset-based projects must treat presets as baselines, not permanent architecture truth
+alwaysApply: true
+---
+
+If `.ai-kit/project-profile.json` contains a preset:
+- use it as initial architecture intent
+- verify current repository state before substantial work
+- run/suggest project sync after framework or infrastructure changes
+- do not keep obsolete preset assumptions when repository reality has changed

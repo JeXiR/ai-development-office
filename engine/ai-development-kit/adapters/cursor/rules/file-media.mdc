@@ -1,0 +1,17 @@
+---
+description: File and media flows must preserve storage abstraction, authorization, tenant isolation and lifecycle safety
+globs:
+  - "**/*upload*"
+  - "**/*media*"
+  - "**/*storage*"
+  - "config/filesystems.php"
+---
+
+For file/media changes:
+- validate type and size
+- keep untrusted uploads out of executable paths
+- authorize private access before signed URL generation
+- namespace tenant files
+- keep storage provider behind abstraction
+- define cleanup/retention
+- add failure/idempotency tests for processing jobs

@@ -1,0 +1,26 @@
+{
+  "id": "ai.provider-router",
+  "version": "1.0",
+  "category": "ai",
+  "aliases": [
+    "ai-router",
+    "provider-router",
+    "ai"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "architecture",
+    "security"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

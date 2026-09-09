@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "detectors": [
+    {
+      "capability": "monorepo.pnpm",
+      "patterns": [
+        "\\bpnpm\\b",
+        "pnpm workspace"
+      ]
+    },
+    {
+      "capability": "monorepo.turborepo",
+      "patterns": [
+        "turborepo",
+        "turbo repo"
+      ]
+    },
+    {
+      "capability": "frontend.web.nextjs",
+      "patterns": [
+        "next\\.js",
+        "nextjs"
+      ]
+    },
+    {
+      "capability": "frontend.mobile.expo",
+      "patterns": [
+        "\\bexpo\\b",
+        "react native"
+      ]
+    },
+    {
+      "capability": "backend.nestjs",
+      "patterns": [
+        "nestjs",
+        "nest\\.js"
+      ]
+    },
+    {
+      "capability": "backend.laravel",
+      "patterns": [
+        "\\blaravel\\b"
+      ]
+    },
+    {
+      "capability": "database.postgres",
+      "patterns": [
+        "postgresql",
+        "postgres"
+      ]
+    },
+    {
+      "capability": "database.mysql",
+      "patterns": [
+        "\\bmysql\\b"
+      ]
+    },
+    {
+      "capability": "cache.redis",
+      "patterns": [
+        "\\bredis\\b"
+      ]
+    },
+    {
+      "capability": "jobs.worker",
+      "patterns": [
+        "background worker",
+        "worker runtime",
+        "\\bworker\\b"
+      ]
+    },
+    {
+      "capability": "jobs.bullmq",
+      "patterns": [
+        "bullmq"
+      ]
+    },
+    {
+      "capability": "ai.provider-router",
+      "patterns": [
+        "ai provider router",
+        "provider router",
+        "multi-provider ai",
+        "ai router"
+      ]
+    },
+    {
+      "capability": "infra.docker",
+      "patterns": [
+        "docker compose",
+        "\\bdocker\\b"
+      ]
+    },
+    {
+      "capability": "infra.aws",
+      "patterns": [
+        "\\baws\\b",
+        "amazon web services"
+      ]
+    },
+    {
+      "capability": "ci.github-actions",
+      "patterns": [
+        "github actions",
+        "ci/cd",
+        "continuous integration"
+      ]
+    },
+    {
+      "capability": "orm.prisma",
+      "patterns": [
+        "\\bprisma\\b"
+      ]
+    }
+  ]
+}

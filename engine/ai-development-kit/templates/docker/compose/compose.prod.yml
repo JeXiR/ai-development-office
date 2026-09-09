@@ -1,0 +1,22 @@
+services:
+  web:
+    image: ${APP_IMAGE:?APP_IMAGE is required}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    stop_grace_period: 30s
+
+  worker:
+    image: ${APP_IMAGE:?APP_IMAGE is required}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command: ["REPLACE_WITH_WORKER_COMMAND"]
+    stop_grace_period: 30s
+
+  scheduler:
+    image: ${APP_IMAGE:?APP_IMAGE is required}
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command: ["REPLACE_WITH_SCHEDULER_COMMAND"]

@@ -1,0 +1,22 @@
+{
+  "id": "example-trigger-v2",
+  "name": "Example Trigger v2",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "index.mjs",
+  "enabledByDefault": false,
+  "permissions": [
+    "trigger"
+  ],
+  "hooks": [
+    "trigger.fire"
+  ],
+  "contributes": {
+    "triggers": [
+      {
+        "id": "example.manual",
+        "label": "Example Manual Trigger"
+      }
+    ]
+  }
+}

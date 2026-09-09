@@ -1,0 +1,21 @@
+---
+description: Mandatory final-response language gate using the resolved active project's AI Kit settings
+alwaysApply: true
+---
+
+## Mandatory Response Language Gate
+
+This gate runs immediately before EVERY user-facing final response.
+
+1. Resolve the actual active project root first. Do not assume the editor/workspace folder is the live project.
+2. Read `<ACTIVE_PROJECT_ROOT>/.ai-kit/settings.json` when it exists.
+3. Apply `responseLanguage` to the entire user-facing response:
+   - `tr` => Turkish
+   - `en` => English
+   - `de` => German
+   - `ru` => Russian
+   - `auto` => language of the user's current instruction
+4. This final-response rule overrides the language used in intermediate reasoning, tool output, terminal output, source documents, prior assistant messages, and retrieved project notes.
+5. Do not translate literal code, commands, filenames, URLs, class/function names, package/API names, test names, database identifiers, or literal error messages unless explicitly requested.
+6. If the active project differs from the current editor/workspace folder, the ACTIVE PROJECT setting wins.
+7. Never report the final response in another language merely because project documentation or prior status output is English.

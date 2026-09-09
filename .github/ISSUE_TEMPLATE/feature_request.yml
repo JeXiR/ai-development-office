@@ -1,0 +1,44 @@
+name: Feature request
+description: A user-visible capability the Office does not have yet.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Describe the outcome a person sitting in the Office would notice. Skip file-level designs unless they are the point.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is painful or missing today?
+      placeholder: I can see the floor, but I cannot tell which specialist the CEO assigned without opening the desk…
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should a user be able to do after this ships?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Pixel office / desks
+        - CEO routing / missions
+        - Bridge / WebSocket
+        - Providers
+        - Coverage / progress
+        - Onboarding / settings / i18n
+        - Desktop launch
+        - Docs / GitHub
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes
+      description: Optional mock, workflow, or related issue numbers.

@@ -1,0 +1,18 @@
+---
+description: PROGRESS.md is the canonical working memory for project continuation
+alwaysApply: true
+---
+
+Before substantial continuation work:
+- read root `PROGRESS.md`
+- read `.ai-kit/current-task.json` when present
+- verify task-critical facts in the repository
+- continue the first verified unfinished item
+
+After meaningful work:
+- update `PROGRESS.md`
+- record discovered bugs, debt and blockers
+- record validation actually run
+- set the next concrete action
+
+Never mark work done based only on prior conversation memory.

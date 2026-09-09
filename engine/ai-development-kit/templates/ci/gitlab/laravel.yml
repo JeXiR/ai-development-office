@@ -1,0 +1,10 @@
+stages:
+  - validate
+
+laravel_validate:
+  stage: validate
+  image: php:8.3-cli
+  script:
+    - php -v
+    - composer install --no-interaction --prefer-dist
+    - php artisan test

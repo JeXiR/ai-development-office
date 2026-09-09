@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Development Kit Settings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "responseLanguage": {
+      "type": "string",
+      "enum": [
+        "tr",
+        "en",
+        "de",
+        "ru",
+        "auto"
+      ],
+      "default": "tr"
+    },
+    "codeLanguage": {
+      "type": "string",
+      "enum": [
+        "en"
+      ],
+      "default": "en"
+    },
+    "commentsLanguage": {
+      "type": "string",
+      "enum": [
+        "en"
+      ],
+      "default": "en"
+    },
+    "docsLanguage": {
+      "type": "string",
+      "enum": [
+        "en"
+      ],
+      "default": "en"
+    }
+  },
+  "required": [
+    "responseLanguage"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "monorepo.turborepo",
+  "version": "1.0",
+  "category": "monorepo",
+  "aliases": [
+    "turborepo",
+    "turbo"
+  ],
+  "depends_on": [
+    "monorepo.pnpm"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "turborepo"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-turborepo.ps1",
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "turbo.json"
+    ]
+  }
+}

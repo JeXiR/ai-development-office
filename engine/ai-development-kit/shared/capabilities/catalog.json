@@ -1,0 +1,143 @@
+{
+  "schema_version": "2.0",
+  "source_of_truth": "shared/capabilities/manifests/*.json",
+  "capabilities": [
+    {
+      "id": "runtime.node",
+      "manifest": "shared/capabilities/manifests/runtime.node.json",
+      "aliases": [
+        "node"
+      ]
+    },
+    {
+      "id": "runtime.php",
+      "manifest": "shared/capabilities/manifests/runtime.php.json",
+      "aliases": [
+        "php"
+      ]
+    },
+    {
+      "id": "monorepo.pnpm",
+      "manifest": "shared/capabilities/manifests/monorepo.pnpm.json",
+      "aliases": [
+        "pnpm",
+        "pnpm-workspace"
+      ]
+    },
+    {
+      "id": "monorepo.turborepo",
+      "manifest": "shared/capabilities/manifests/monorepo.turborepo.json",
+      "aliases": [
+        "turborepo",
+        "turbo"
+      ]
+    },
+    {
+      "id": "frontend.web.nextjs",
+      "manifest": "shared/capabilities/manifests/frontend.web.nextjs.json",
+      "aliases": [
+        "nextjs",
+        "next.js"
+      ]
+    },
+    {
+      "id": "frontend.mobile.expo",
+      "manifest": "shared/capabilities/manifests/frontend.mobile.expo.json",
+      "aliases": [
+        "expo",
+        "react-native-expo"
+      ]
+    },
+    {
+      "id": "backend.nestjs",
+      "manifest": "shared/capabilities/manifests/backend.nestjs.json",
+      "aliases": [
+        "nestjs",
+        "nest.js"
+      ]
+    },
+    {
+      "id": "backend.laravel",
+      "manifest": "shared/capabilities/manifests/backend.laravel.json",
+      "aliases": [
+        "laravel"
+      ]
+    },
+    {
+      "id": "database.postgres",
+      "manifest": "shared/capabilities/manifests/database.postgres.json",
+      "aliases": [
+        "postgres",
+        "postgresql"
+      ]
+    },
+    {
+      "id": "database.mysql",
+      "manifest": "shared/capabilities/manifests/database.mysql.json",
+      "aliases": [
+        "mysql"
+      ]
+    },
+    {
+      "id": "cache.redis",
+      "manifest": "shared/capabilities/manifests/cache.redis.json",
+      "aliases": [
+        "redis"
+      ]
+    },
+    {
+      "id": "jobs.worker",
+      "manifest": "shared/capabilities/manifests/jobs.worker.json",
+      "aliases": [
+        "worker",
+        "worker-runtime"
+      ]
+    },
+    {
+      "id": "jobs.bullmq",
+      "manifest": "shared/capabilities/manifests/jobs.bullmq.json",
+      "aliases": [
+        "bullmq"
+      ]
+    },
+    {
+      "id": "ai.provider-router",
+      "manifest": "shared/capabilities/manifests/ai.provider-router.json",
+      "aliases": [
+        "ai-router",
+        "provider-router",
+        "ai"
+      ]
+    },
+    {
+      "id": "infra.docker",
+      "manifest": "shared/capabilities/manifests/infra.docker.json",
+      "aliases": [
+        "docker"
+      ]
+    },
+    {
+      "id": "infra.aws",
+      "manifest": "shared/capabilities/manifests/infra.aws.json",
+      "aliases": [
+        "aws"
+      ]
+    },
+    {
+      "id": "ci.github-actions",
+      "manifest": "shared/capabilities/manifests/ci.github-actions.json",
+      "aliases": [
+        "github-actions",
+        "ci-cd",
+        "ci"
+      ]
+    },
+    {
+      "id": "orm.prisma",
+      "manifest": "shared/capabilities/manifests/orm.prisma.json",
+      "aliases": [
+        "prisma"
+      ]
+    }
+  ]
+}

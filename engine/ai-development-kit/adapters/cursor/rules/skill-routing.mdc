@@ -1,0 +1,14 @@
+---
+description: Route substantial tasks through the find-skill skill before implementation
+alwaysApply: true
+---
+
+For substantial coding, architecture, infrastructure, database, mobile, design, debugging or integration tasks:
+
+1. inspect project context and relevant docs
+2. use the `find-skill` routing logic
+3. select the minimum relevant skills
+4. avoid loading or applying unrelated stack guidance
+5. re-evaluate routing if the task scope changes
+
+Do not infer the full stack solely from the user's prompt when repository evidence exists.

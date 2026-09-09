@@ -1,0 +1,20 @@
+---
+description: Mobile development constraints and required project context
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "app.json"
+  - "app.config.*"
+  - "eas.json"
+  - "android/**"
+  - "ios/**"
+---
+
+For mobile work:
+- inspect Expo/React Native versions and existing native modules
+- reuse navigation, API, auth and storage conventions
+- never store secrets in plaintext mobile storage
+- handle loading/error/offline states explicitly
+- account for iOS and Android behavior
+- preserve accessibility and touch target usability
+- document new permissions, deep links and native config

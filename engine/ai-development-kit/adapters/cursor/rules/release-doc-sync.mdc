@@ -1,0 +1,13 @@
+---
+description: Releases must be validated and project documentation must remain synchronized
+alwaysApply: true
+---
+
+Before declaring a release ready:
+- verify tests/security/migrations/API/runtime
+- review Docker/IaC when present
+- update PROGRESS.md
+- update PROJECT_STATE.md for durable architectural state
+- update ADRs for material architecture decisions
+- prepare rollback and post-release verification
+- never invent changelog items

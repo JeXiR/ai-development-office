@@ -1,0 +1,17 @@
+---
+description: Production Docker must be stack-aware, non-root, secret-safe and role-separated
+globs:
+  - "Dockerfile*"
+  - "compose*.yml"
+  - ".dockerignore"
+---
+
+For production Docker:
+- prefer multi-stage builds
+- do not bake secrets
+- run non-root where practical
+- separate web/worker/scheduler roles
+- add health/lifecycle handling
+- keep dev bind mounts out of production
+- validate image build
+- review ECS/Fargate compatibility

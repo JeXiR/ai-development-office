@@ -1,0 +1,16 @@
+{
+  "schema_version": "2.0",
+  "status": "in_progress",
+  "title": "Audit tenancy",
+  "command": "review project",
+  "phase": "tenancy",
+  "last_completed_step": "routes inspected",
+  "next_step": "inspect tenant middleware",
+  "selected_reason": null,
+  "evidence": [
+    "routes/tenant.php"
+  ],
+  "finding_ids": [],
+  "validation_state": "not_run",
+  "updated_at": "2026-08-17T00:00:00"
+}

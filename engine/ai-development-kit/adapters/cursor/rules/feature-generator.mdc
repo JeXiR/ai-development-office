@@ -1,0 +1,13 @@
+---
+description: Substantial features should follow the end-to-end feature workflow
+alwaysApply: true
+---
+
+For substantial features:
+- read/create the feature spec
+- analyze project impact
+- route through relevant skills/capabilities
+- check migration/API/security implications
+- implement authorization and tests
+- add observability where needed
+- run completion gates before calling the feature done

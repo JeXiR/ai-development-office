@@ -1,0 +1,17 @@
+---
+description: Frontend work must inspect existing design system and supplied references before implementation
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.blade.php"
+  - "**/*.css"
+  - "**/*.scss"
+---
+
+- Search for reusable project components before creating new ones.
+- Inspect relevant frontend docs and design-system conventions.
+- When Figma, screenshots, templates or legacy screens are referenced, understand them before coding.
+- Treat references as input, not permission to replace current architecture.
+- Do not invent new visual primitives when existing ones fit.
+- Ask only material design questions that cannot be inferred.

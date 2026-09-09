@@ -1,0 +1,12 @@
+---
+description: Core project behavior for AI-assisted development
+alwaysApply: true
+---
+
+- Read relevant project documentation before substantial changes.
+- Search for existing implementations before creating duplicate components or services.
+- Preserve existing functionality unless the task explicitly requires changing it.
+- Never hard-code secrets or credentials.
+- Treat legacy projects, purchased templates, and Figma as references to adapt.
+- Prefer portable infrastructure abstractions; avoid coupling domain logic to AWS, Docker, Plesk, or a specific hosting provider.
+- Record significant architecture decisions under docs/decisions.

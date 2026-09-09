@@ -1,0 +1,12 @@
+---
+description: Read project context before substantial work
+alwaysApply: true
+---
+
+Before substantial implementation or refactoring:
+- inspect `docs/PROJECT_STATE.md` when present
+- inspect relevant docs/ADRs
+- inspect existing related implementations
+- inspect framework/runtime versions and dependencies
+- reuse project conventions
+- ask only questions that cannot be inferred and materially affect the result

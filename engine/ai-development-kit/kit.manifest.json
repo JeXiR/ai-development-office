@@ -1,0 +1,362 @@
+{
+  "name": "AI-Development-Kit",
+  "version": "3.5.5",
+  "targets": [
+    "cursor",
+    "claude"
+  ],
+  "stacks": {
+    "frontend": [
+      "react",
+      "nextjs",
+      "typescript",
+      "blade",
+      "tailwind"
+    ],
+    "backend": [
+      "laravel",
+      "php"
+    ],
+    "database": [
+      "mysql",
+      "postgres",
+      "prisma",
+      "eloquent"
+    ],
+    "mobile": [
+      "react-native",
+      "expo",
+      "mobile-ui",
+      "navigation",
+      "mobile-storage",
+      "mobile-auth",
+      "mobile-api",
+      "offline-cache",
+      "notifications",
+      "deep-links",
+      "permissions",
+      "gestures",
+      "mobile-animation",
+      "mobile-security",
+      "mobile-testing",
+      "mobile-build-release",
+      "app-store-release",
+      "crash-reporting",
+      "mobile-observability",
+      "mobile-qa"
+    ],
+    "devops": [
+      "docker",
+      "nginx",
+      "plesk",
+      "linux",
+      "ci-cd",
+      "docker-compose"
+    ],
+    "cloud": [
+      "aws-foundations",
+      "aws-s3",
+      "aws-iam",
+      "aws-rds",
+      "aws-ecs",
+      "aws-ec2",
+      "aws-lambda",
+      "aws-cloudfront",
+      "aws-route53",
+      "aws-observability"
+    ]
+  },
+  "workflows": [
+    "existing-project",
+    "external-component-discovery",
+    "feature-development",
+    "figma-to-code",
+    "legacy-to-new",
+    "mobile-feature",
+    "mobile-release",
+    "new-project",
+    "project-analysis",
+    "project-bootstrap",
+    "purchased-template",
+    "skill-routing",
+    "source-routing"
+  ],
+  "design_intelligence": [
+    "design-system",
+    "figma-to-code",
+    "screenshot-to-code",
+    "component-reuse",
+    "ui-architecture",
+    "design-review",
+    "interaction-design",
+    "animation",
+    "animation-decision",
+    "visual-qa"
+  ],
+  "reference_types": [
+    "purchased-template",
+    "legacy-project",
+    "figma",
+    "screenshot"
+  ],
+  "router": {
+    "skill": "find-skill",
+    "registry": "shared/skill-registry.json",
+    "detection_rules": "shared/skill-detection-rules.json",
+    "workflow": "skill-routing"
+  },
+  "external_sources": "shared/external-sources/registry.json",
+  "source_router": {
+    "skill": "source-router",
+    "registry": "shared/external-sources/registry.json",
+    "matrix": "shared/external-sources/SOURCE_MATRIX.md"
+  },
+  "project_analysis": {
+    "profile": ".ai-kit/project-profile.json",
+    "generated_stack": "docs/architecture/STACK.generated.md",
+    "schema": "shared/schemas/project-profile.schema.json"
+  },
+  "skill_installation": {
+    "mode": "selective",
+    "resolver": "scripts/resolve-skills.ps1",
+    "installer": "scripts/install-selected-skills.ps1",
+    "sync": "scripts/sync-project.ps1",
+    "manifest": ".ai-kit/installed-skills.json",
+    "overrides": ".ai-kit/skill-overrides.json"
+  },
+  "presets": {
+    "registry": "shared/presets/registry.json",
+    "wizard": "scripts/project-wizard.ps1",
+    "creator": "scripts/create-from-preset.ps1"
+  },
+  "scaffolding": {
+    "wizard": "scripts/project-wizard.ps1",
+    "preset_scaffolder": "scripts/scaffold-from-preset.ps1",
+    "laravel": "scripts/scaffold-laravel.ps1",
+    "nextjs": "scripts/scaffold-nextjs.ps1",
+    "expo": "scripts/scaffold-expo.ps1",
+    "validator": "scripts/validate-baseline.ps1"
+  },
+  "capabilities": {
+    "registry": "shared/capabilities/registry.json",
+    "installer": "scripts/install-capability.ps1",
+    "wizard": "scripts/capability-wizard.ps1",
+    "manifest": ".ai-kit/installed-capabilities.json"
+  },
+  "dependency_graph": "shared/capabilities/dependency-graph.json",
+  "conflict_detector": "scripts/check-capability-conflicts.ps1",
+  "architecture_drift": "scripts/check-architecture-drift.ps1",
+  "roadmap": "ROADMAP.md",
+  "environment_safety": {
+    "audit": "scripts/audit-environment.ps1",
+    "secret_scan": "scripts/scan-secrets.ps1",
+    "schema": "shared/schemas/environment-contract.schema.json"
+  },
+  "migration_safety": {
+    "check": "scripts/check-migration-safety.ps1",
+    "workflow": "shared/workflows/migration-safety/WORKFLOW.md"
+  },
+  "security_audit": {
+    "pipeline": "scripts/security-audit.ps1",
+    "dependencies": "scripts/audit-dependencies.ps1",
+    "routes": "scripts/audit-routes.ps1",
+    "config": "scripts/audit-security-config.ps1"
+  },
+  "test_strategy": {
+    "analyzer": "scripts/analyze-tests.ps1",
+    "generator": "scripts/generate-test-strategy.ps1",
+    "baseline_check": "scripts/check-test-baseline.ps1",
+    "profile": ".ai-kit/test-profile.json"
+  },
+  "cicd": {
+    "generator": "scripts/generate-cicd.ps1",
+    "local_gate": "scripts/ci-local-check.ps1",
+    "templates": "templates/ci"
+  },
+  "observability": {
+    "analyzer": "scripts/analyze-observability.ps1",
+    "baseline_check": "scripts/check-observability-baseline.ps1",
+    "docs_generator": "scripts/generate-observability-docs.ps1",
+    "profile": ".ai-kit/observability-profile.json"
+  },
+  "api_contract": {
+    "initializer": "scripts/init-api-contract.ps1",
+    "analyzer": "scripts/analyze-api-contract.ps1",
+    "validator": "scripts/check-api-contract.ps1",
+    "typed_client": "scripts/generate-api-client.ps1",
+    "default_contract": "docs/api/openapi.yaml"
+  },
+  "feature_generator": {
+    "workflow": "shared/workflows/feature-generator/WORKFLOW.md",
+    "initializer": "scripts/init-feature.ps1",
+    "analyzer": "scripts/analyze-feature.ps1",
+    "validator": "scripts/validate-feature.ps1",
+    "runner": "scripts/feature-workflow.ps1"
+  },
+  "tenancy": {
+    "analyzer": "scripts/analyze-tenancy.ps1",
+    "isolation_check": "scripts/check-tenant-isolation.ps1",
+    "workflow": "shared/workflows/multi-tenant/WORKFLOW.md",
+    "profile": ".ai-kit/tenancy-profile.json"
+  },
+  "project_memory": {
+    "progress": "PROGRESS.md",
+    "task_state": ".ai-kit/current-task.json",
+    "handoff": ".ai-kit/HANDOFF.md",
+    "init_progress": "scripts/init-progress.ps1",
+    "handoff_generator": "scripts/generate-handoff.ps1",
+    "progress_check": "scripts/check-progress.ps1"
+  },
+  "background_jobs": {
+    "analyzer": "scripts/analyze-background-jobs.ps1",
+    "reliability_check": "scripts/check-job-reliability.ps1",
+    "scheduler_check": "scripts/check-scheduler-safety.ps1",
+    "workflow": "shared/workflows/background-jobs/WORKFLOW.md",
+    "profile": ".ai-kit/background-jobs-profile.json"
+  },
+  "file_media": {
+    "analyzer": "scripts/analyze-file-storage.ps1",
+    "upload_security": "scripts/check-upload-security.ps1",
+    "tenant_check": "scripts/check-storage-tenancy.ps1",
+    "lifecycle_check": "scripts/check-storage-lifecycle.ps1",
+    "workflow": "shared/workflows/file-media/WORKFLOW.md",
+    "profile": ".ai-kit/file-storage-profile.json"
+  },
+  "iac": {
+    "initializer": "scripts/init-iac.ps1",
+    "validator": "scripts/validate-iac.ps1",
+    "planner": "scripts/plan-iac.ps1",
+    "safety_check": "scripts/check-iac-safety.ps1",
+    "template": "templates/iac/aws"
+  },
+  "production_docker": {
+    "analyzer": "scripts/analyze-docker-target.ps1",
+    "generator": "scripts/generate-production-docker.ps1",
+    "safety_check": "scripts/check-docker-safety.ps1",
+    "build_validation": "scripts/validate-docker-build.ps1",
+    "workflow": "shared/workflows/production-docker/WORKFLOW.md"
+  },
+  "frontend_quality": {
+    "initializer": "scripts/init-frontend-quality.ps1",
+    "performance": "scripts/check-performance-budget.ps1",
+    "accessibility": "scripts/check-accessibility-baseline.ps1",
+    "visual_regression": "scripts/check-visual-regression-baseline.ps1",
+    "combined": "scripts/frontend-quality-check.ps1",
+    "budget": ".ai-kit/performance-budget.json"
+  },
+  "release_management": {
+    "project_state": "PROJECT_STATE.md",
+    "prepare": "scripts/prepare-release.ps1",
+    "readiness": "scripts/check-release-readiness.ps1",
+    "doc_sync": "scripts/check-doc-sync.ps1",
+    "workflow": "scripts/release-workflow.ps1"
+  },
+  "finalization": {
+    "doctor": "scripts/doctor.ps1",
+    "self_test": "scripts/self-test.ps1",
+    "skill_registry_validation": "scripts/validate-skill-registry.ps1",
+    "reference_validation": "scripts/validate-reference-integrity.ps1",
+    "adapter_parity": "scripts/validate-adapter-parity.ps1",
+    "json_validation": "scripts/validate-json.ps1",
+    "finalization_doc": "FINALIZATION.md"
+  },
+  "workflow_commands": {
+    "guide": "COMMANDS.md",
+    "router": "shared/skills/core/workflow-command-router/SKILL.md",
+    "next_action": "shared/skills/core/next-action-resolver/SKILL.md",
+    "decision_resolver": "shared/skills/core/decision-resolver/SKILL.md",
+    "state_helper": "scripts/show-next-action.ps1"
+  },
+  "project_update": {
+    "updater": "scripts/update-project.ps1",
+    "preserves": [
+      "PROGRESS.md",
+      "PROJECT_STATE.md",
+      ".ai-kit/current-task.json",
+      "docs/",
+      "project-authored CLAUDE.md"
+    ]
+  },
+  "project_audit": {
+    "command": "review project",
+    "workflow": "shared/workflows/project-audit/WORKFLOW.md",
+    "state_repair": "scripts/ensure-project-state.ps1",
+    "cursor_state_file": "CURSOR.md"
+  },
+  "claude_instruction_sync": {
+    "script": "scripts/sync-claude-instructions.ps1",
+    "managed_block": "AI-KIT:WORKFLOW-ROUTER"
+  },
+  "command_isolation": {
+    "status_read_only": true,
+    "review_project_git_optional": true,
+    "automatic_command_chaining": false
+  },
+  "project_discovery": {
+    "workflow": "shared/workflows/project-discovery/WORKFLOW.md",
+    "docs_discovery": "scripts/discover-project-docs.ps1",
+    "state_freshness": "scripts/check-state-freshness.ps1"
+  },
+  "office_contracts": {
+    "architecture": "shared/office/OFFICE_ARCHITECTURE.md",
+    "event_schema": "shared/office/contracts/office-event.schema.json",
+    "state_schema": "shared/office/contracts/office-state.schema.json"
+  },
+  "author": "JeXiR (Halil Cinkilinc)",
+  "attribution_scope": "AI Development Kit / AI Development Office only; never inject into user application source code.",
+  "state_contract": "shared/contracts/STATE_CONTRACT_V1.md",
+  "command_contracts": "shared/contracts/COMMAND_CONTRACTS.md",
+  "audit_coverage_contract": "shared/contracts/AUDIT_COVERAGE_MATRIX.md",
+  "durable_handoff_schema": "shared/contracts/current-task.schema.json",
+  "behavior_tests": "scripts/test-behavior-contracts.ps1",
+  "reference_integrity_fix": {
+    "description": "Manifest validation is key-aware and no longer treats arbitrary descriptive strings containing '/' as file paths.",
+    "script": "scripts/validate-reference-integrity.ps1"
+  },
+  "reference_integrity_fix_v2": {
+    "description": "Path validation now requires both a path-bearing key and a path-like value. Identifiers such as skill-routing are ignored.",
+    "script": "scripts/validate-reference-integrity.ps1"
+  },
+  "doctor_execution_fix": {
+    "description": "Doctor now executes command parity and behavioral contract checks instead of printing them as text, and reads HEALTHY version dynamically.",
+    "script": "scripts/doctor.ps1"
+  },
+  "office_telemetry": {
+    "emitter": "scripts/emit-office-event.ps1",
+    "command_emitter": "scripts/emit-office-command.ps1",
+    "event_file": ".ai-kit/events.jsonl",
+    "state_file": ".ai-kit/office-state.json",
+    "user_application_code_modification": false,
+    "project_local_tools": [
+      ".ai-kit/tools/emit-office-event.ps1",
+      ".ai-kit/tools/emit-office-command.ps1"
+    ],
+    "sync_script": "scripts/sync-office-tools.ps1",
+    "cursor_instruction_sync": "scripts/sync-cursor-instructions.ps1",
+    "instruction_validation": "scripts/validate-project-telemetry-instructions.ps1"
+  },
+  "project_readiness": {
+    "command": "check project readiness",
+    "script": "scripts/check-project-readiness.ps1",
+    "contract": "shared/contracts/PROJECT_READINESS_CONTRACT.md",
+    "schema": "shared/contracts/project-readiness.schema.json"
+  },
+  "preset_composition": {
+    "fullstack_ai_mobile_monorepo": "scripts/scaffold-fullstack-ai-mobile-monorepo.ps1"
+  },
+  "office_command_queue": {
+    "contract": "shared/contracts/OFFICE_COMMAND_QUEUE.md",
+    "request_file": ".ai-kit/command-requests.jsonl",
+    "result_file": ".ai-kit/command-results.jsonl",
+    "auto_execution_without_runner": false
+  },
+  "capability_orchestrator": {
+    "catalog": "shared/capabilities/catalog.json",
+    "compositions": "shared/compositions/registry.json",
+    "detector": "scripts/detect-project-capabilities.ps1",
+    "resolver": "scripts/resolve-capability-graph.ps1",
+    "composition_resolver": "scripts/resolve-composition.ps1",
+    "orchestrator": "scripts/scaffold-composition.ps1",
+    "validator": "scripts/validate-capability.ps1"
+  }
+}

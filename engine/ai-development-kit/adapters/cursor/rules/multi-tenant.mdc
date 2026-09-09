@@ -1,0 +1,13 @@
+---
+description: Tenant-owned data must remain isolated across all application boundaries
+alwaysApply: true
+---
+
+For multi-tenant code:
+- resolve tenant centrally
+- scope database reads/writes
+- enforce membership/authorization server-side
+- namespace cache and storage
+- propagate tenant context into background jobs
+- add cross-tenant negative tests
+- make admin/support bypass explicit

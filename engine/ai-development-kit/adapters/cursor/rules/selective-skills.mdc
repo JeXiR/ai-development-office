@@ -1,0 +1,12 @@
+---
+description: Use only relevant installed skills and preserve project custom skills
+alwaysApply: true
+---
+
+The project's `.cursor/skills` directory is selectively managed.
+
+- use `find-skill` for task-level routing
+- do not assume all master-kit skills are installed
+- preserve unmanaged/custom project skills
+- when stack materially changes, recommend/run project synchronization
+- use `.ai-kit/installed-skills.json` as the managed installation manifest

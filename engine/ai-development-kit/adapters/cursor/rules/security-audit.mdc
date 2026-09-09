@@ -1,0 +1,11 @@
+---
+description: Security-sensitive changes require explicit audit of authorization, tenancy and exposure
+alwaysApply: true
+---
+
+For auth, admin, tenant, upload, route, secret or infrastructure changes:
+- review server-side authorization
+- review tenant/resource scoping
+- review client exposure
+- run relevant security audit checks
+- do not lower security controls merely to unblock implementation

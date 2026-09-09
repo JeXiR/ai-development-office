@@ -1,0 +1,18 @@
+---
+description: API changes must preserve the declared contract and consumer compatibility
+globs:
+  - "routes/**"
+  - "app/**"
+  - "src/**"
+  - "docs/api/**"
+  - "**/openapi.*"
+  - "**/swagger.*"
+---
+
+For API changes:
+- update contract with implementation
+- do not silently change response shapes
+- review breaking changes
+- preserve consistent auth/errors/pagination
+- regenerate typed clients when contract changes
+- run contract checks and consumer typecheck

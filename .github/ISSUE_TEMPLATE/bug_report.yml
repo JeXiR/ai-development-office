@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in the Office UI, bridge, or provider path is wrong.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        Security issues (silent `--force`, secret leakage, writes outside a trusted project) must **not** go here. Use SECURITY.md instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see? What did you expect?
+      placeholder: The coverage strip stayed empty after PROGRESS.md existed…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps a maintainer can follow on a clean Office start.
+      placeholder: |
+        1. Start Office with `.\office.ps1`
+        2. Open a trusted project
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Office version
+      description: From package.json, for example 2.1.9.
+      placeholder: 2.1.9
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Pixel office / desks
+        - CEO routing / missions
+        - Bridge / WebSocket
+        - Providers (Cursor / Claude / other)
+        - Coverage strip
+        - Onboarding / settings
+        - Desktop launch
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or evidence
+      description: Terminal output, screenshot, or bridge error. Redact secrets and local account paths you do not need to share.
+      render: text

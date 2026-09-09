@@ -1,0 +1,11 @@
+---
+description: Production-impacting features should preserve useful observability without logging secrets
+alwaysApply: true
+---
+
+For production-sensitive changes:
+- preserve/request correlation where applicable
+- attach release/environment context to operational signals
+- do not log secrets or sensitive payloads
+- add queue/job visibility for asynchronous critical work
+- ensure health/readiness behavior remains valid

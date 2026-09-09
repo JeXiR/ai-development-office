@@ -1,0 +1,34 @@
+{
+  "id": "frontend.web.nextjs",
+  "version": "1.0",
+  "category": "frontend.web",
+  "aliases": [
+    "nextjs",
+    "next.js"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "react",
+    "nextjs",
+    "typescript",
+    "responsive-ui",
+    "accessibility"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-nextjs.ps1",
+    "arguments": {
+      "Tailwind": true
+    }
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "package.json"
+    ]
+  }
+}

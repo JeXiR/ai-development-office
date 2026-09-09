@@ -1,0 +1,18 @@
+---
+description: Capability-first scaffold orchestration
+alwaysApply: true
+---
+
+Before scaffolding a new project:
+
+PROJECT DOCS
+-> detector
+-> canonical capability resolver
+-> composition resolver
+-> dependency/conflict graph
+-> scaffold orchestrator
+-> per-capability validation
+-> doctor/state
+
+Presets contain capability IDs only.
+Do not embed technology-specific switches in preset orchestration.

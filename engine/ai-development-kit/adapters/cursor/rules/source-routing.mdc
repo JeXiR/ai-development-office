@@ -1,0 +1,17 @@
+---
+description: Route external UI, effect and template selection through the source registry
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.blade.php"
+  - "**/*.css"
+  - "**/*.scss"
+---
+
+When an external UI/effect/template source is useful:
+- use the approved source registry
+- prefer foundation sources for application UI
+- reserve highly animated sources for contexts where motion adds product value
+- check project license policy before paid-source reuse
+- avoid combining multiple decorative libraries unnecessarily
+- normalize imported code to project tokens/components

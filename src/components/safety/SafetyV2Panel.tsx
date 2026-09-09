@@ -1,0 +1,16 @@
+"use client";
+import {useState} from "react";import {useOfficeStore} from "@/store/useOfficeStore";import {useSafetyV2Store} from "@/store/useSafetyV2Store";import {sendOffice} from "@/hooks/useOfficeSocket";
+import {useOfficeI18n} from "@/i18n/officeI18n";
+import {useWhenOfficeConnected} from "@/hooks/useWhenOfficeConnected";
+const send=sendOffice;
+export function SafetyV2Panel(){
+  const {t}=useOfficeI18n();
+ const projectId=useOfficeStore(s=>s.activeProjectId);const state=useSafetyV2Store();const[command,setCommand]=useState("git reset --hard HEAD~1");
+ useWhenOfficeConnected(()=>{if(projectId)send({action:"safety_v2_snapshot",project_id:projectId});},[projectId]);
+ return <section className="panel"><div className="section-heading"><div><div className="eyebrow">{t("safety.eyebrow")}</div><h2>{t("safety.title")}</h2></div><button onClick={()=>projectId&&send({action:"safety_v2_snapshot",project_id:projectId})}>{t("common.refresh")}</button></div>
+ <div className="safetyv2-grid"><article><strong>{t("safety.sandbox")}</strong><span>{state.profile?.label||"—"}</span></article><article><strong>{t("safety.runtime")}</strong><span>{state.profile?.maxRuntimeMinutes??"—"} min</span></article><article><strong>{t("safety.tokens")}</strong><span>{state.profile?.maxTokens??"—"}</span></article><article><strong>{t("safety.cost")}</strong><span>${state.profile?.maxCostUsd??"—"}</span></article></div>
+ <div className="command-risk-row"><input value={command} onChange={e=>setCommand(e.target.value)}/><button onClick={()=>send({action:"safety_classify_command",command})}>{t("safety.classify")}</button>{state.commandRisk?<span>{state.commandRisk.level} · {state.commandRisk.reasons.join(" / ")||"safe"}</span>:null}</div>
+ <div className="approval-list">{state.approvals.slice().reverse().map(a=><article key={a.id}><div><strong>{a.action}</strong><small>{a.risk} · {a.reason}</small><em>{a.command||a.resource||a.actor}</em></div><span>{a.decision}</span>{a.decision==="pending"?<div><button onClick={()=>projectId&&send({action:"safety_approval_decide",project_id:projectId,approval_id:a.id,decision:"approved",actor:"user"})}>{t("common.approve")}</button><button onClick={()=>projectId&&send({action:"safety_approval_decide",project_id:projectId,approval_id:a.id,decision:"rejected",actor:"user"})}>{t("common.reject")}</button></div>:null}</article>)}</div>
+ <div className="safety-demo-row"><button onClick={()=>projectId&&send({action:"safety_authorize",project_id:projectId,actor:"demo",permission_action:"shell",profile_id:"guarded",command,network:"ask",provider_execution:"allow",terminal_write:"ask",terminal_terminate:"ask",filesystem_write:"ask"})}>{t("safety.testAuth")}</button><button onClick={()=>send({action:"safety_budget_check",started_at:new Date(Date.now()-91*60000).toISOString(),tokens:260000,cost_usd:26,max_runtime_minutes:90,max_tokens:250000,max_cost_usd:25})}>{t("safety.testCeilings")}</button>{state.authorization?<span>{state.authorization.allowed?t("safety.allowed"):t("safety.blocked")} · {state.authorization.reason}</span>:null}{state.budget?<span>{state.budget.ok?"ok":t("safety.blocked")} · {(state.budget.violations||[]).join(", ")}</span>:null}</div>
+ </section>;
+}

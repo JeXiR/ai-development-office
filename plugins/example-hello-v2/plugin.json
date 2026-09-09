@@ -1,0 +1,32 @@
+{
+  "id": "example-hello-v2",
+  "name": "Example Hello v2",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "index.mjs",
+  "enabledByDefault": false,
+  "permissions": [
+    "read_project",
+    "tool",
+    "ui"
+  ],
+  "hooks": [
+    "office.start",
+    "tool.invoke"
+  ],
+  "contributes": {
+    "tools": [
+      {
+        "id": "hello.echo",
+        "label": "Hello Echo",
+        "description": "Echoes a message through the example plugin."
+      }
+    ],
+    "panels": [
+      {
+        "id": "hello.panel",
+        "title": "Hello Plugin"
+      }
+    ]
+  }
+}

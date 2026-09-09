@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "capabilities": {
+    "prisma": {
+      "requires_stack": [
+        "node-or-nextjs"
+      ],
+      "conflicts": [
+        "established-non-prisma-orm"
+      ],
+      "recommends": [
+        "postgres-or-supported-db"
+      ]
+    },
+    "shadcn-ui": {
+      "requires_stack": [
+        "react-or-nextjs"
+      ],
+      "conflicts": [
+        "mature-incompatible-ui-system"
+      ],
+      "recommends": [
+        "tailwind"
+      ]
+    },
+    "motion": {
+      "requires_stack": [
+        "react-or-nextjs"
+      ],
+      "conflicts": [
+        "framer-motion-duplicate",
+        "gsap-for-simple-ui"
+      ],
+      "compatible_with": [
+        "shadcn-ui"
+      ]
+    },
+    "laravel-sanctum": {
+      "requires_stack": [
+        "laravel"
+      ],
+      "conflicts": [
+        "established-alternative-auth"
+      ],
+      "recommends": [
+        "laravel-api"
+      ]
+    },
+    "redis": {
+      "conflicts": [
+        "duplicate-redis-client"
+      ],
+      "recommends": [
+        "cache-or-queue-use"
+      ]
+    },
+    "laravel-s3": {
+      "requires_stack": [
+        "laravel"
+      ],
+      "recommends": [
+        "storage-abstraction"
+      ],
+      "conflicts": [
+        "direct-custom-s3-sdk-architecture"
+      ]
+    },
+    "laravel-queue-database": {
+      "requires_stack": [
+        "laravel"
+      ],
+      "conflicts": [
+        "redis-queue-as-established-driver"
+      ]
+    },
+    "laravel-cache-database": {
+      "requires_stack": [
+        "laravel"
+      ],
+      "conflicts": [
+        "redis-cache-as-established-driver"
+      ]
+    },
+    "expo-secure-store": {
+      "requires_stack": [
+        "expo"
+      ],
+      "conflicts": [
+        "duplicate-secure-storage"
+      ]
+    },
+    "expo-notifications": {
+      "requires_stack": [
+        "expo"
+      ],
+      "recommends": [
+        "permissions",
+        "deep-links"
+      ]
+    }
+  }
+}

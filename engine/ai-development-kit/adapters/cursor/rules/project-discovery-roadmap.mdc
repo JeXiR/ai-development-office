@@ -1,0 +1,15 @@
+---
+description: Establish canonical project docs and roadmap before deriving progress
+alwaysApply: true
+---
+
+Before trusting PROGRESS.md:
+- detect missing/template/stale state
+- discover roadmap/product/docs
+- normalize docs
+- reconstruct state from roadmap + repository evidence
+
+If no useful project intent exists, ask the user what they want to build.
+Do not invent a product.
+
+`review project` happens after roadmap/state initialization and performs deep implementation verification.

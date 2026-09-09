@@ -1,0 +1,22 @@
+{
+  "id": "example-provider-v2",
+  "name": "Example Provider v2",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "index.mjs",
+  "enabledByDefault": false,
+  "permissions": [
+    "provider"
+  ],
+  "hooks": [
+    "provider.route"
+  ],
+  "contributes": {
+    "providers": [
+      {
+        "id": "example-provider",
+        "label": "Example Provider"
+      }
+    ]
+  }
+}

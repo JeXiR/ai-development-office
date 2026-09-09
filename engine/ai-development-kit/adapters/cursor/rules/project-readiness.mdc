@@ -1,0 +1,15 @@
+---
+description: Gate scaffolding through AI Development Kit project readiness and kit gap analysis
+alwaysApply: true
+---
+
+Recognize `check project readiness`.
+
+Before new-project scaffolding:
+- derive required capabilities from canonical docs
+- verify actual kit scaffold/template/generator/validator support
+- write `.ai-kit/project-readiness.json`
+- block scaffold on MISSING/PARTIAL/CONFLICT
+- prefer reusable kit capability fixes over project-specific workarounds
+
+If READY, use compatible preset composition.

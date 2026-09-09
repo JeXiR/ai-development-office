@@ -1,0 +1,114 @@
+{
+  "schema_version": "2.0",
+  "compositions": [
+    {
+      "id": "web-nextjs",
+      "name": "Web Nextjs",
+      "capabilities": [
+        "frontend.web.nextjs"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "web-laravel",
+      "name": "Web Laravel",
+      "capabilities": [
+        "backend.laravel"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "mobile-expo",
+      "name": "Mobile Expo",
+      "capabilities": [
+        "frontend.mobile.expo"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "api-nestjs",
+      "name": "Api Nestjs",
+      "capabilities": [
+        "backend.nestjs"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "api-laravel",
+      "name": "Api Laravel",
+      "capabilities": [
+        "backend.laravel"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "nextjs-prisma-postgres",
+      "name": "Nextjs Prisma Postgres",
+      "capabilities": [
+        "frontend.web.nextjs",
+        "orm.prisma",
+        "database.postgres"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "fullstack-mobile-api",
+      "name": "Fullstack Mobile Api",
+      "capabilities": [
+        "frontend.mobile.expo",
+        "backend.nestjs",
+        "database.postgres"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "fullstack-ai-mobile",
+      "name": "Fullstack Ai Mobile",
+      "capabilities": [
+        "frontend.mobile.expo",
+        "backend.nestjs",
+        "database.postgres",
+        "cache.redis",
+        "jobs.worker",
+        "ai.provider-router"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "fullstack-ai-mobile-monorepo",
+      "name": "Fullstack Ai Mobile Monorepo",
+      "capabilities": [
+        "monorepo.pnpm",
+        "monorepo.turborepo",
+        "frontend.mobile.expo",
+        "backend.nestjs",
+        "database.postgres",
+        "cache.redis",
+        "jobs.worker",
+        "ai.provider-router",
+        "infra.docker",
+        "ci.github-actions"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "laravel-mysql-queue",
+      "name": "Laravel Mysql Queue",
+      "capabilities": [
+        "backend.laravel",
+        "database.mysql",
+        "cache.redis"
+      ],
+      "optional_capabilities": []
+    },
+    {
+      "id": "monorepo-fullstack",
+      "name": "Monorepo Fullstack",
+      "capabilities": [
+        "monorepo.pnpm",
+        "monorepo.turborepo"
+      ],
+      "optional_capabilities": []
+    }
+  ]
+}

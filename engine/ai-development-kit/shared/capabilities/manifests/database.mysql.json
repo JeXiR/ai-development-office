@@ -1,0 +1,27 @@
+{
+  "id": "database.mysql",
+  "version": "1.0",
+  "category": "database",
+  "aliases": [
+    "mysql"
+  ],
+  "depends_on": [],
+  "conflicts_with": [
+    "database.postgres"
+  ],
+  "skills": [
+    "mysql",
+    "migrations",
+    "database-performance"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

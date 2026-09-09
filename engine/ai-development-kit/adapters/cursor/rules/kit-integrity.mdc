@@ -1,0 +1,11 @@
+---
+description: AI Development Kit changes must preserve registry, references, parity and self-test integrity
+alwaysApply: true
+---
+
+When modifying the kit itself:
+- update registry/manifest
+- avoid duplicate skill names
+- preserve Cursor/Claude integration
+- run doctor/self-test
+- do not release with broken internal paths

@@ -1,0 +1,13 @@
+---
+description: CI/CD pipelines must validate correctness, security and migration safety before deploy
+globs:
+  - ".github/workflows/**"
+  - ".gitlab-ci.yml"
+  - "**/*pipeline*"
+---
+
+- use least-privilege CI permissions
+- never embed secrets
+- keep validation/build/deploy concerns separated
+- block production deploy on critical security or migration failures
+- do not auto-run destructive migrations

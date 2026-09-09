@@ -1,0 +1,222 @@
+{
+  "signals": [
+    {
+      "match": "composer.json contains laravel/framework",
+      "skills": [
+        "php",
+        "laravel",
+        "eloquent"
+      ]
+    },
+    {
+      "match": "resources/views/**/*.blade.php",
+      "skills": [
+        "blade"
+      ]
+    },
+    {
+      "match": "package.json contains react",
+      "skills": [
+        "react"
+      ]
+    },
+    {
+      "match": "package.json contains next",
+      "skills": [
+        "nextjs",
+        "react"
+      ]
+    },
+    {
+      "match": "tsconfig.json or TypeScript dependency",
+      "skills": [
+        "typescript"
+      ]
+    },
+    {
+      "match": "tailwind dependency/config",
+      "skills": [
+        "tailwind"
+      ]
+    },
+    {
+      "match": "prisma/schema.prisma",
+      "skills": [
+        "prisma"
+      ]
+    },
+    {
+      "match": "database config indicates mysql",
+      "skills": [
+        "mysql"
+      ]
+    },
+    {
+      "match": "database config indicates postgres",
+      "skills": [
+        "postgres"
+      ]
+    },
+    {
+      "match": "Dockerfile",
+      "skills": [
+        "docker"
+      ]
+    },
+    {
+      "match": "compose/docker-compose file",
+      "skills": [
+        "docker",
+        "docker-compose"
+      ]
+    },
+    {
+      "match": "Plesk deployment docs/config",
+      "skills": [
+        "plesk",
+        "linux",
+        "deployment"
+      ]
+    },
+    {
+      "match": "AWS references in docs/infra",
+      "skills": [
+        "aws-foundations"
+      ]
+    },
+    {
+      "match": "S3 storage config",
+      "skills": [
+        "aws-s3"
+      ]
+    },
+    {
+      "match": "ECS/Fargate infra",
+      "skills": [
+        "aws-ecs"
+      ]
+    },
+    {
+      "match": "RDS/Aurora infra",
+      "skills": [
+        "aws-rds"
+      ]
+    },
+    {
+      "match": "Expo dependency/app config",
+      "skills": [
+        "react-native",
+        "expo"
+      ]
+    },
+    {
+      "match": "React Native dependency",
+      "skills": [
+        "react-native"
+      ]
+    }
+  ],
+  "task_overrides": {
+    "figma": [
+      "figma-to-code",
+      "design-system",
+      "component-reuse",
+      "visual-qa"
+    ],
+    "screenshot": [
+      "screenshot-to-code",
+      "design-system",
+      "visual-qa"
+    ],
+    "debug": [
+      "debugging",
+      "testing"
+    ],
+    "security": [
+      "security",
+      "testing"
+    ],
+    "migration": [
+      "migrations",
+      "testing"
+    ],
+    "deployment": [
+      "deployment"
+    ],
+    "s3": [
+      "aws-foundations",
+      "aws-s3",
+      "security"
+    ],
+    "notification": [
+      "notifications",
+      "permissions",
+      "mobile-security"
+    ],
+    "deep link": [
+      "deep-links",
+      "navigation",
+      "mobile-security"
+    ],
+    "component library": [
+      "component-source-finder",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "animation effect": [
+      "animation-source-finder",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "react bits": [
+      "component-source-finder",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "animate ui": [
+      "component-source-finder",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "motion": [
+      "animation-source-finder",
+      "external-library-evaluator"
+    ],
+    "weather effect": [
+      "animation-source-finder",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "template source": [
+      "template-source-selector",
+      "source-router",
+      "license-source-check"
+    ],
+    "ui library": [
+      "source-router",
+      "external-library-evaluator",
+      "license-source-check"
+    ],
+    "hero animation": [
+      "source-router",
+      "animation-source-finder",
+      "source-composer"
+    ],
+    "3d effect": [
+      "source-router",
+      "animation-source-finder",
+      "external-library-evaluator"
+    ],
+    "webgl": [
+      "source-router",
+      "animation-source-finder",
+      "external-library-evaluator"
+    ],
+    "landing page": [
+      "source-router",
+      "design-system",
+      "responsive-ui",
+      "accessibility"
+    ]
+  }
+}

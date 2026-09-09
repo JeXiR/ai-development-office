@@ -1,0 +1,32 @@
+{
+  "id": "jobs.worker",
+  "version": "1.0",
+  "category": "jobs",
+  "aliases": [
+    "worker",
+    "worker-runtime"
+  ],
+  "depends_on": [
+    "runtime.node"
+  ],
+  "conflicts_with": [],
+  "skills": [
+    "worker-runtime",
+    "queues",
+    "background-jobs"
+  ],
+  "scaffold": {
+    "mode": "script",
+    "script": "scripts/scaffold-worker.ps1",
+    "arguments": {
+      "Destination": "apps\\worker"
+    }
+  },
+  "validate": {
+    "mode": "files",
+    "script": null,
+    "files": [
+      "apps/worker/README.md"
+    ]
+  }
+}

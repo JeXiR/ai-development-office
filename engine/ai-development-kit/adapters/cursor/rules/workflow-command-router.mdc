@@ -1,0 +1,33 @@
+---
+description: Interpret short project commands through AI Development Kit workflows
+alwaysApply: true
+---
+
+Short user commands are valid workflow commands.
+
+Examples:
+- continue
+- next
+- plan next
+- implement next
+- fix next
+- review
+- validate
+- sync project
+- handoff
+- release
+- status
+- decide
+
+For these commands:
+1. read PROGRESS.md
+2. read PROJECT_STATE.md
+3. read .ai-kit/current-task.json
+4. inspect relevant docs/repository
+5. use workflow-command-router + next-action-resolver
+6. select only required skills
+7. execute the matching workflow
+8. update project memory after meaningful work
+9. resolve the actual active project root, read its `.ai-kit/settings.json`, and apply the mandatory response-language gate to the entire final user-facing response
+
+Do not ask the user to provide a long procedural prompt that can be derived from project state.

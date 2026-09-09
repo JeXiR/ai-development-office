@@ -1,0 +1,41 @@
+---
+description: Emit truthful AI Development Office telemetry for AI Development Kit workflows
+alwaysApply: true
+---
+
+When executing an AI Development Kit short command and the project has `.ai-kit`:
+
+Use the kit's `scripts/emit-office-event.ps1` when accessible.
+
+Emit truthful events at workflow boundaries only.
+
+Examples:
+- `status` -> CEO/PM/Docs reading
+- `sync state` -> PM/Docs/Architect
+- `review project` -> Architect/Backend/Frontend/Database/QA/Security/DevOps as each audit area is actually inspected
+- `fix next` -> selected implementation role + QA/Security validation
+- `validate` -> QA/Security/DevOps as gates actually run
+- `continue` -> resume roles implied by current-task
+
+Do not emit simulated progress.
+Do not modify user application source code for telemetry.
+
+
+## Project-local emitter requirement (v3.3.6)
+
+Use project-local tools first:
+
+```powershell
+.\.ai-kit\tools\emit-office-event.ps1
+.\.ai-kit\tools\emit-office-command.ps1
+```
+
+Do not depend on a hard-coded central kit path such as `D:\AI-Development-Kit`.
+
+If the local emitter is missing, report telemetry tooling drift and continue the user workflow without modifying application source code.
+
+
+## Office command queue
+Office requests may appear in `.ai-kit/command-requests.jsonl`.
+Do not pretend queued commands ran.
+Consume them only through an explicit/approved Office command runner workflow.

@@ -1,0 +1,11 @@
+import fs from "node:fs";import os from "node:os";import path from "node:path";
+import {IntegrationRegistry,McpManager} from "../src/integrations/registry";
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),"office-int-"));
+const reg=new IntegrationRegistry();
+reg.update(temp,"webhook",{enabled:true,endpoint:"https://example.invalid/hook"});
+const cfg=reg.load(temp).find(x=>x.id==="webhook");
+if(!cfg?.enabled||!cfg.endpoint)throw new Error("integration registry failed");
+const mcp=new McpManager();
+mcp.upsert(temp,{id:"fs",command:"npx",args:["x"],env:{},enabled:true});
+if(mcp.list(temp).length!==1)throw new Error("mcp manager failed");
+console.log("Integrations smoke PASS");

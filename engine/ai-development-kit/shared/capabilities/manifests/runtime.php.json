@@ -1,0 +1,23 @@
+{
+  "id": "runtime.php",
+  "version": "1.0",
+  "category": "runtime",
+  "aliases": [
+    "php"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "php"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

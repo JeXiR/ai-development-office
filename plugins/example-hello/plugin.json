@@ -1,0 +1,10 @@
+{
+  "id": "example-hello",
+  "name": "Example Hello Plugin",
+  "version": "1.0.0",
+  "description": "Reference plugin manifest for AI Development Office.",
+  "permissions": [
+    "ui"
+  ],
+  "entry": "index.js"
+}

@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "contracts": [
+    {
+      "id": "B01",
+      "fixture": "empty-project",
+      "expect": "ASK_PROJECT_IDEA"
+    },
+    {
+      "id": "B02",
+      "fixture": "docs-only-project",
+      "expect": "ROADMAP_DISCOVERED_PROGRESS_RECONSTRUCTABLE"
+    },
+    {
+      "id": "B03",
+      "fixture": "stale-progress-project",
+      "expect": "STATE_RECONSTRUCTION_REQUIRED"
+    },
+    {
+      "id": "B04",
+      "fixture": "conflicting-docs-project",
+      "expect": "DECISION_REQUIRED"
+    },
+    {
+      "id": "B05",
+      "fixture": "interrupted-handoff-project",
+      "expect": "RESUME_NEXT_STEP"
+    },
+    {
+      "id": "B06",
+      "fixture": "validation-failed-project",
+      "expect": "MUST_NOT_VERIFY_DONE"
+    }
+  ]
+}

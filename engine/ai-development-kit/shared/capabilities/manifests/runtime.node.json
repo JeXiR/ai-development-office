@@ -1,0 +1,23 @@
+{
+  "id": "runtime.node",
+  "version": "1.0",
+  "category": "runtime",
+  "aliases": [
+    "node"
+  ],
+  "depends_on": [],
+  "conflicts_with": [],
+  "skills": [
+    "typescript"
+  ],
+  "scaffold": {
+    "mode": "none",
+    "script": null,
+    "arguments": {}
+  },
+  "validate": {
+    "mode": "none",
+    "script": null,
+    "files": []
+  }
+}

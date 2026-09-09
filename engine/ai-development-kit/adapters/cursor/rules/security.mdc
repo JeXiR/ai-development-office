@@ -1,0 +1,10 @@
+---
+description: Mandatory security constraints
+alwaysApply: true
+---
+
+- Never expose credentials, tokens, API keys, private keys, database passwords or secrets.
+- Enforce server-side authorization for protected actions.
+- Treat all external input as untrusted.
+- Preserve tenant isolation.
+- Do not disable security controls merely to make a feature work.

@@ -1,0 +1,14 @@
+---
+description: Existing repositories must be analyzed before architecture-sensitive work
+alwaysApply: true
+---
+
+If `.ai-kit/project-profile.json` exists, use it as a routing hint.
+Also verify relevant facts against current repository files.
+
+If it does not exist and the task is architecture-sensitive:
+- analyze the repository
+- read `docs/architecture/STACK.generated.md` when available
+- use find-skill after analysis
+
+Generated profiles are hints, not substitutes for repository evidence.
