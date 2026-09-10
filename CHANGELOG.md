@@ -1,5 +1,46 @@
 ## 2.1.9 — Runtime Stability + Project-Neutral Startup
 
+### Command Center continue + quality gate
+- Continue and Fix Next from Mission Commands queue collaborative and bind `.ai-kit/current-task.json`. Dirty Git falls back to Solo; after independent verify they still commit `office-factory:` (product files, not untracked `.ai-kit/`).
+- Plan-owned files no longer invent `current-task.js` / `package.js` from `.json` mentions.
+- Re-check Done flips that project's completed mutating commands from `pending_reaudit` to `verified`.
+
+### Coordination hardening
+- Leases now conflict on path prefixes, renew while work is in flight, and sweep dead tasks.
+- Plan-owned files re-claim the lease; factory will not complete without `VERDICT: PASS` from an independent verifier.
+- Project MCP `office-ask` exposes `ask_*` plus lease claim/release so one CLI can consult another.
+
+### Coordination + CallMe leakage
+- TTL task/file leases, independent verify receipts, and read-only `ask_cli` consults (ATC / Supervisor / rAInbow ideas).
+- Factory UI lanes: queued / active / review. Coordination panel on Office + Tasks.
+- CallMe validation panel stays hidden unless the detector matches. No default CallMe path in live smoke or project placeholders.
+
+### Factory live hardening (CallMe)
+- Windows resolver prefers `.cmd` / `.exe` over npm `.ps1` / extensionless bash shims.
+- Queue + desk PTY spawn now wrap `.cmd` / `.ps1` instead of a Cursor/Claude-only PowerShell script.
+- Factory trips when `PROGRESS.md` / roadmap still contain Git conflict markers (CallMe is in that state).
+- Completer ignores conflict lines and will not rewrite a conflicted kit file.
+
+### Factory + hive + desktop zoo
+- Hive can write a discrete handoff into a live expert PTY, not only the next prompt.
+- Circuit breaker prefers provider JSON token usage and falls back to an estimate.
+- Factory also drains roadmap, findings, coverage, and feature-contract gaps.
+- CLI zoo adds Kimi, Qwen, Crush, and Pi with real headless flags.
+- Wizard install works on macOS/Linux via brew/npm, not only Windows.
+- Trusted/factory desk terminals no longer sit behind `terminalWrite: ask`.
+- Cross-session memory palace / knowledge graph lives in `.ai-kit/memory-v2/graph.json`.
+- One-click installer can vendor portable Node so the user does not need Node on PATH. Codesign stays optional until a cert exists.
+
+### Factory + hive (same train)
+- Autonomous factory finishes open `PROGRESS.md` items without per-item confirm. CEO assigns once; specialists handshake in hive mail.
+- Optional expert-to-expert mailbox does not require CEO as middleman.
+- Queue runner accepts Codex, Gemini CLI, Copilot, OpenCode, custom command, and Local besides Cursor/Claude.
+- Per-agent token/cost/runtime/failure circuit breaker can stop a runaway factory.
+- Desk click can spawn a live read/write terminal. Onboarding detects Copilot and offers install.
+- No personality-clone CEO, no spawn-any-agent gallery as the core loop, no PostHog-style product telemetry.
+
+
+
 ### Real browser findings
 - Pixel Office hit `Maximum update depth exceeded` because `seedAgents()` always emitted a new Zustand state object.
 - GlobalContextHelp synchronously unmounted generated React roots while React was still rendering.

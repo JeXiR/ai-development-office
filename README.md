@@ -39,10 +39,12 @@ A typical session looks like this:
 
 1. Register a project and mark it **trusted**.
 2. Open any pixel desk — the clicked agent reports in, but does not steal the work.
-3. Type or speak the task and send it to the CEO.
-4. The CEO assigns the right specialist.
-5. The Office runs a **plan → execute → verify** loop against that project.
+3. Type or speak the task, or run **Tasks → Mission Commands** one at a time.
+4. The CEO assigns the right specialist (desk click never locks the mission to that sprite).
+5. The Office runs **plan → execute → independent verify → Re-check Done** against that project.
 6. The floor, coverage strip, and command timeline show live progress.
+
+Mutating Mission Commands (**Continue**, **Fix Next**) commit product files as `office-factory:` after the independent verifier passes — the same record the factory leaves. Untracked `.ai-kit/` stays out of that commit.
 
 The Office UI is read-only against your application code. Writes go through explicit, trusted actions — never because someone clicked a sprite.
 
@@ -51,7 +53,7 @@ The Office UI is read-only against your application code. Writes go through expl
 ## How it works
 
 ```text
-  You (typed task / speech)
+  You (typed task / speech / Mission Commands)
            │
            ▼
   ┌─────────────────────────────────────────┐
@@ -88,7 +90,8 @@ Official work always goes through the **CEO**. Clicking a pixel agent opens that
 | --- | --- |
 | **Pixel floor** | Live office with desks, movement, and work talk in the selected UI language. |
 | **CEO routing** | Any desk can receive a task; the CEO assigns the specialist. |
-| **Mission loop** | Plan first, then execute, then verify. Findings queue instead of colliding. |
+| **Mission loop** | Plan → execute → independent verify → Re-check Done. Findings queue instead of colliding. |
+| **Command Center** | Sequential Mission Commands on Tasks (Status, Harvest, Find Next, Continue, Re-check Done). Continue/Fix Next bind `.ai-kit/current-task.json` and commit like the factory after verify. |
 | **Coverage strip** | After `PROGRESS.md` exists, applicable stack domains show completion (frontend, backend, Flutter, security, …). |
 | **Providers** | Cursor CLI and Claude Code as first-class runners, plus a universal provider SDK. |
 | **Trust gates** | File-changing commands require an explicit trusted action. No silent `--force`. |
@@ -156,6 +159,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/V2_1_UNIFIED_ARCHITEC
 
 - **Reads are cheap.** Inspecting project state does not require extra confirmation.
 - **Writes are gated.** File-modifying Cursor/Claude runs get `--force` / auto permissions only after you trigger a write-capable action in the UI.
+- **Commits are Office-owned.** Continue/Fix Next prefer isolated collaborative execution on a **clean** Git tree. A dirty tree falls back to Solo and still commits `office-factory:` after verify (product files and kit docs; not untracked `.ai-kit/`).
 - **Trust is per project.** Untrusted folders stay observational.
 - **No silent bypass.** The Office prefers Claude `--permission-mode auto` over blindly skipping all permissions.
 - **Data stays local.** Registry and settings are on your machine, not in the install ZIP.
@@ -183,7 +187,8 @@ Override with `OFFICE_DATA_DIR` in `.env.local` if you want the registry on anot
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | First install, providers, doctor |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | UI / bridge / kit boundary |
 | [docs/KIT_INTEGRATION.md](docs/KIT_INTEGRATION.md) | `.ai-kit` events and office state |
-| [docs/PLAN_FIRST_WORKFLOW.md](docs/PLAN_FIRST_WORKFLOW.md) | Plan → execute → verify |
+| [docs/PLAN_FIRST_WORKFLOW.md](docs/PLAN_FIRST_WORKFLOW.md) | Plan → execute → verify, owned files, Continue commit |
+| [docs/QUALITY_GATES_AND_REPORTS.md](docs/QUALITY_GATES_AND_REPORTS.md) | Independent verifier and Re-check Done |
 | [CHANGELOG.md](CHANGELOG.md) | What shipped in each version |
 | [LICENSE-NOTE.md](LICENSE-NOTE.md) | Attribution |
 
