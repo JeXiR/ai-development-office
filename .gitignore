@@ -52,3 +52,6 @@ ehthumbs.db
 
 # Cursor / local tooling
 .cursor/
+
+# Local competitor notes — not product docs, do not publish
+docs/OFFICE_VS_MUNDER_DIFFLIN.md
