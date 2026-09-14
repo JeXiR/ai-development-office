@@ -13,6 +13,7 @@ import { AgentAnalyticsPanel } from "./AgentAnalyticsPanel";
 import { OperationsBoard } from "./OperationsBoard";
 import { CommandCenter } from "./CommandCenter";
 import { QualityGatePanel } from "./QualityGatePanel";
+import { CoordinationPanel } from "./CoordinationPanel";
 import { FindingsPanel } from "./FindingsPanel";
 import { ProjectCoveragePanel } from "./ProjectCoveragePanel";
 import { DecisionCenter } from "./DecisionCenter";
@@ -121,7 +122,7 @@ export function OfficeDashboard({initialLanguage}:{initialLanguage?:OfficeUiLang
         {view==="projects"&&<><LocalizedViewHeading titleKey="heading.projects"/><MultiProjectOverview/><ProjectsManager/></>}
         {view==="agents"&&<><LocalizedViewHeading titleKey="heading.agents"/><div className="two-col"><TeamPanel/><div><OrganizationPanel/><AgentTrustPanel/></div></div></>}
         {view==="skills"&&<><LocalizedViewHeading titleKey="heading.skills"/><SkillsHub/></>}
-        {view==="tasks"&&<><LocalizedViewHeading titleKey="heading.tasks"/><CommandCenter/><QueueManager/><AdaptiveRoutingPanel/><SubtaskContractPanel/><DependencyGraphPanel/><CollaborationGraphPanel/><OperationsBoard/><QualityGatePanel/></>}
+        {view==="tasks"&&<><LocalizedViewHeading titleKey="heading.tasks"/><CommandCenter/><QueueManager/><CoordinationPanel/><AdaptiveRoutingPanel/><SubtaskContractPanel/><DependencyGraphPanel/><CollaborationGraphPanel/><OperationsBoard/><QualityGatePanel/></>}
         {view==="inbox"&&<><LocalizedViewHeading titleKey="heading.inbox"/><DecisionInbox/><NotificationCenter/></>}
         {view==="findings"&&<><LocalizedViewHeading titleKey="heading.findings"/><ProjectCoveragePanel/><DecisionCenter/><FindingsPanel/></>}
         {view==="analytics"&&<><LocalizedViewHeading titleKey="heading.analytics"/><div className="two-col analytics-layout"><AgentAnalyticsPanel/><AgentTrustPanel/></div><CostLedgerPanel/><ProjectCoveragePanel/></>}

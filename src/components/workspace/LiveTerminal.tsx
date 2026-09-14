@@ -18,7 +18,7 @@ export function LiveTerminal(){
   const terminalRef=useRef<any>(null);
   const last=useRef("");
 
-  const spawn=(provider:"cursor"|"claude"|"codex"|"gemini"|"opencode"|"local")=>{
+  const spawn=(provider:"cursor"|"claude"|"codex"|"gemini"|"copilot"|"kimi"|"qwen"|"crush"|"pi"|"grok"|"opencode"|"custom"|"local")=>{
     if(!projectId)return;
     send({
       action:"runtime_spawn",
@@ -95,6 +95,13 @@ export function LiveTerminal(){
         <button onClick={()=>spawn("claude")}>+ Claude</button>
         <button onClick={()=>spawn("codex")}>+ Codex</button>
         <button onClick={()=>spawn("gemini")}>+ Gemini</button>
+        <button onClick={()=>spawn("copilot")}>+ Copilot</button>
+        <button onClick={()=>spawn("kimi")}>+ Kimi</button>
+        <button onClick={()=>spawn("qwen")}>+ Qwen</button>
+        <button onClick={()=>spawn("crush")}>+ Crush</button>
+        <button onClick={()=>spawn("pi")}>+ Pi</button>
+        <button onClick={()=>spawn("grok")}>+ Grok</button>
+        <button onClick={()=>spawn("custom")}>+ Custom</button>
         <button onClick={()=>spawn("opencode")}>+ OpenCode</button>
         <button onClick={()=>spawn("local")}>+ Local</button>
       </div>

@@ -7,6 +7,7 @@ import {discoverProviderCliExecutables} from "./provider-bootstrap";
 import {ProcessSupervisor} from "./process-supervisor";
 import {waitForPort} from "./health";
 import {openExternal} from "./open-browser";
+import {resolveOfficeNode,usesBundledNode} from "./bundled-node";
 
 function commandForNpm(){
   return process.platform==="win32"?"npm.cmd":"npm";
@@ -38,11 +39,15 @@ async function main(){
     ...(project?.path?{OFFICE_PROJECT_PATH:project.path}:{})
   };
 
+  const nodeBin=resolveOfficeNode(config.officeRoot);
+  const bundled=usesBundledNode(config.officeRoot);
+  console.log(`Node        : ${bundled?"bundled":"system"} ${nodeBin}`);
+
   console.log("Starting bridge...");
   const bridge=supervisor.spawn(
     "bridge",
-    commandForNpm(),
-    ["run","bridge"],
+    bundled?nodeBin:commandForNpm(),
+    bundled?["--import","tsx","bridge/server.ts"]:["run","bridge"],
     {cwd:config.officeRoot,env}
   );
 
@@ -56,8 +61,8 @@ async function main(){
   console.log("Starting web runtime...");
   const web=supervisor.spawn(
     "web",
-    commandForNpm(),
-    ["run","dev","--","-p",String(config.webPort)],
+    bundled?nodeBin:commandForNpm(),
+    bundled?["node_modules/next/dist/bin/next","start","-p",String(config.webPort)]:["run","dev","--","-p",String(config.webPort)],
     {cwd:config.officeRoot,env}
   );
 

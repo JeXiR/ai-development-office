@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { ViewportModal, modalAnchorFromEvent, type ModalAnchor } from "./ViewportModal";
-import { useActiveProjectCoverage, useActiveFeatureContracts } from "@/hooks/useActiveProject";
+import { useActiveProjectCoverage, useActiveFeatureContracts, useActiveProjectState, useActiveProjectWorkbench } from "@/hooks/useActiveProject";
+import { liveCompletion } from "@/coverage/live-completion";
 import { sendOffice } from "@/hooks/useOfficeSocket";
 import type { CoverageDomain, CoverageCheck, CoverageDomainId } from "@/types/coverage";
 import type { FeatureContract, FeatureSurfaceExpectation } from "@/types/feature-contract";
@@ -61,7 +62,17 @@ function featureWorkItem(projectId:string,f:FeatureContract,s:FeatureSurfaceExpe
 export function ProjectCoveragePanel(){
   const {t}=useOfficeI18n();
   const coverage=useActiveProjectCoverage();
+  const state=useActiveProjectState();
+  const workbench=useActiveProjectWorkbench();
   const features=useActiveFeatureContracts();
+  const live=liveCompletion({
+    coverageScore:coverage.overallScore,
+    roadmapPercent:state.roadmapPercent,
+    remainingPercent:state.remainingPercent??coverage.remainingPercent,
+    workTodo:workbench.summary.todo,
+    workDone:workbench.summary.done,
+    workFixing:workbench.summary.fixing
+  });
   const [domain,setDomain]=useState<CoverageDomain|null>(null);
   const [feature,setFeature]=useState<FeatureContract|null>(null);
   const [selectedChecks,setSelectedChecks]=useState<Set<string>>(()=>new Set());
@@ -115,10 +126,10 @@ export function ProjectCoveragePanel(){
       <div className="coverage-head">
         <div>
           <div className="eyebrow">{t("coverage.eyebrow")}</div>
-          <h2>{t("coverage.overall").replace("{n}",String(coverage.overallScore))}</h2>
-          <div className="muted">{t("coverage.confidence").replace("{level}",coverage.overallConfidence.toUpperCase()).replace("{n}",String(coverage.unknownCount))}</div>
+          <h2>{t("coverage.overall").replace("{n}",String(live.overallScore))}</h2>
+          <div className="muted">{t("progress.remaining").replace("{n}",String(live.remainingPercent))} · {t("coverage.confidence").replace("{level}",coverage.overallConfidence.toUpperCase()).replace("{n}",String(coverage.unknownCount))}</div>
         </div>
-        <div className="overall-ring" style={{"--score":coverage.overallScore} as React.CSSProperties}><strong>{coverage.overallScore}%</strong></div>
+        <div className="overall-ring" style={{"--score":live.overallScore} as React.CSSProperties}><strong>{live.overallScore}%</strong></div>
       </div>
 
       <div className="coverage-domain-grid">

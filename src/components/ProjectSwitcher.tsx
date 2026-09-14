@@ -52,7 +52,7 @@ export function ProjectSwitcher() {
       </div>
       <form onSubmit={submit} className="project-form">
         <label><span>{t("switcher.path")}</span><input value={path} onChange={e=>setPath(e.target.value)} placeholder={"D:\\Projects\\my-project"} autoFocus/></label>
-        <label><span>{t("switcher.name")} <em>{t("common.optional")}</em></span><input value={name} onChange={e=>setName(e.target.value)} placeholder="CallMe"/></label>
+        <label><span>{t("switcher.name")} <em>{t("common.optional")}</em></span><input value={name} onChange={e=>setName(e.target.value)} placeholder="My project"/></label>
         {message?<div className="form-message">{message}</div>:null}
         <div className="modal-actions"><button type="button" className="secondary-btn" onClick={()=>setOpen(false)}>{t("common.cancel")}</button><button className="primary-btn" type="submit">{t("projects.add")}</button></div>
       </form>

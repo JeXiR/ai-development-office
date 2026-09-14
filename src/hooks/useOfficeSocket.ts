@@ -7,6 +7,8 @@ import { useUxStore } from "@/store/useUxStore";
 import { useMissionRunnerStore } from "@/mission-runner/store";
 import { useProjectDocsStore } from "@/store/useProjectDocsStore";
 import { useCollaborationStore } from "@/store/useCollaborationStore";
+import { useFactoryStore } from "@/store/useFactoryStore";
+import { useCoordinationStore } from "@/store/useCoordinationStore";
 import { useMemoryV2Store } from "@/store/useMemoryV2Store";
 import { useIntegrationV2Store } from "@/store/useIntegrationV2Store";
 import { useDistributedStore } from "@/store/useDistributedStore";
@@ -178,6 +180,23 @@ export function useOfficeSocket() {
               String(payload.data.subject||payload.data.body||"message")
             );
           }
+          if (payload.type === "coordination_snapshot" && payload.data) {
+            useCoordinationStore.getState().set({
+              leases:payload.data.leases||[],
+              receipts:payload.data.receipts||[],
+              mcpId:payload.data.mcp?.id||null,
+              templates:payload.data.templates||[],
+              tools:payload.data.tools?.events||[],
+              toolTree:payload.data.tools?.tree||[]
+            });
+          }
+          if (payload.type === "ask_cli_result" && payload.data) {
+            useCoordinationStore.getState().set({lastAsk:payload.data});
+          }
+          if (payload.type === "factory_status" && payload.data) {
+            const projectId=String(payload.data.projectId||payload.data.project_id||"");
+            if(projectId)useFactoryStore.getState().upsert(projectId, payload.data);
+          }
           if (payload.type === "collaboration_snapshot") {
             useCollaborationStore.getState().setSnapshot(payload.data||{});
             usePixelOfficeStore.getState().syncTasks(Array.isArray(payload.data?.tasks)?payload.data.tasks:[]);
@@ -247,7 +266,7 @@ if (payload.type === "safety_snapshot") {
           if (payload.type === "safety_command_risk") useSafetyV2Store.getState().set({commandRisk:payload.data||null});
           if (payload.type === "safety_authorization_result") useSafetyV2Store.getState().set({authorization:payload.data||null});
           if (payload.type === "safety_budget_result") useSafetyV2Store.getState().set({budget:payload.data||null});
-          if (payload.type === "memory_v2_snapshot") useMemoryV2Store.getState().set({records:payload.data?.records||[]});
+          if (payload.type === "memory_v2_snapshot") useMemoryV2Store.getState().set({records:payload.data?.records||[],graph:payload.data?.graph||null});
           if (payload.type === "memory_v2_search_result") useMemoryV2Store.getState().set({hits:Array.isArray(payload.data)?payload.data:[]});
           if (payload.type === "memory_v2_specialties") useMemoryV2Store.getState().set({specialties:Array.isArray(payload.data)?payload.data:[]});
           if (payload.type === "integration_v2_snapshot") useIntegrationV2Store.getState().set({audit:payload.data?.audit||[],watches:payload.data?.watches||[]});
@@ -256,7 +275,7 @@ if (payload.type === "safety_snapshot") {
           if (payload.type === "distributed_job_output") useDistributedStore.getState().appendLog(String(payload.jobId||""),String(payload.data?.chunk||""));
           if (payload.type === "distributed_job_log") useDistributedStore.getState().set({logs:{...useDistributedStore.getState().logs,[String(payload.data?.jobId||"")]:String(payload.data?.text||"")}});
           if (payload.type === "distributed_artifact_result") useDistributedStore.getState().set({lastArtifact:payload.data||null});
-          if (payload.type === "installer_snapshot") useInstallerStore.getState().set({prerequisites:payload.data?.prerequisites||[],version:payload.data?.version||null,runtime:payload.data?.runtime||null});
+          if (payload.type === "installer_snapshot") useInstallerStore.getState().set({prerequisites:payload.data?.prerequisites||[],version:payload.data?.version||null,runtime:payload.data?.runtime||null,codesign:payload.data?.codesign||null});
           if (payload.type === "first_run_diagnostics") useInstallerStore.getState().set({diagnostics:payload.data||null});
           if (payload.type === "update_stage_result") useInstallerStore.getState().set({staged:payload.data||null});
           if (payload.type === "update_verify_result") useInstallerStore.getState().set({staged:payload.data||null});

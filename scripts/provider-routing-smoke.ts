@@ -1,4 +1,5 @@
 import {classifyMissionRequirements} from "../src/orchestration/mission-classifier";
+import {OllamaAdapter} from "../src/provider-sdk/adapters/ollama";
 import {isProviderRouteEligible,isUnconfiguredProviderError,preferredUniversalProvider} from "../src/provider-sdk/eligibility";
 import {DEFAULT_PROVIDER_POLICY} from "../src/provider-sdk/policy";
 import {UniversalProviderRuntime} from "../src/provider-sdk/runtime";
@@ -117,6 +118,20 @@ async function main(){
   const ollamaRuntime=new UniversalProviderRuntime([ollamaOnly,gemini]);
   const ollamaRoute=await ollamaRuntime.route({requires:["coding","reasoning"],allowLocal:true});
   if(ollamaRoute.providerId!=="ollama")fail(`Healthy Ollama should be selectable, got ${ollamaRoute.providerId}`);
+
+  const cursorVsOllama=new UniversalProviderRuntime([new FakeAdapter("ollama",true),cursor]);
+  const cursorFirst=await cursorVsOllama.route({requires:["coding","reasoning"]},DEFAULT_PROVIDER_POLICY);
+  if(cursorFirst.providerId!=="cursor")fail(`Cursor must beat Ollama by default, got ${cursorFirst.providerId}`);
+
+  const savedOllama=process.env.OLLAMA_MODEL;
+  delete process.env.OLLAMA_MODEL;
+  try{
+    const ollamaHealth=await new OllamaAdapter(manifest("ollama")).health();
+    if(ollamaHealth.available)fail("Ollama must not be healthy without OLLAMA_MODEL");
+  }finally{
+    if(savedOllama==null)delete process.env.OLLAMA_MODEL;
+    else process.env.OLLAMA_MODEL=savedOllama;
+  }
 
   if(!isProviderRouteEligible({
     configured:false,

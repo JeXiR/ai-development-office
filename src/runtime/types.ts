@@ -1,4 +1,4 @@
-export type RuntimeProvider="cursor"|"claude"|"codex"|"gemini"|"opencode"|"local";
+export type RuntimeProvider="cursor"|"claude"|"codex"|"gemini"|"copilot"|"kimi"|"qwen"|"crush"|"pi"|"grok"|"opencode"|"custom"|"local";
 
 export type RuntimeSessionStatus=
   |"starting"

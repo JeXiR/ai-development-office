@@ -1,5 +1,7 @@
+import fs from "node:fs";
 import {spawn} from "node:child_process";
-import {ProviderInstaller} from "../src/installer/provider-installer";
+import {ProviderInstaller,providerInstallSpecs} from "../src/installer/provider-installer";
+import {writeWindowsInstallScript} from "../src/installer/windows-install-window";
 
 function onceError(child:ReturnType<typeof spawn>,ms=400){
   return new Promise<Error|null>((resolve)=>{
@@ -29,6 +31,14 @@ async function main(){
       throw new Error(`unexpected old-spawn error: ${badError.message}`);
     }
   }
+
+  if(!providerInstallSpecs.grok?.script?.some(line=>/x\.ai\/cli\/install\.ps1/.test(line))){
+    throw new Error("Grok CLI installer script missing");
+  }
+  const script=writeWindowsInstallScript("Grok CLI",providerInstallSpecs.grok.script||[]);
+  const text=fs.readFileSync(script,"utf8");
+  if(!text.includes("irm https://x.ai/cli/install.ps1 | iex"))throw new Error("Grok install script body missing irm");
+  if(/\r?\nstart /.test(text))throw new Error("install script should not call cmd start");
 
   console.log("Provider installer smoke PASS");
 }

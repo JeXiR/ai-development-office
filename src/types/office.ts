@@ -10,7 +10,7 @@ export type OfficeRole = CoreOfficeRole | string;
 export type AgentKind = "core" | "specialist";
 export type AgentScope = "active" | "candidate" | "disabled";
 
-export type RunnerProvider = "auto" | "cursor" | "claude";
+export type RunnerProvider = "auto" | "cursor" | "claude" | "codex" | "gemini" | "copilot" | "kimi" | "qwen" | "crush" | "pi" | "grok" | "opencode" | "custom" | "local";
 
 export interface OfficeAgent {
   id: string;
@@ -51,6 +51,7 @@ export interface OfficeState {
   activeTask?: string | null;
   health: "unknown" | "healthy" | "warning" | "critical";
   roadmapPercent?: number | null;
+  remainingPercent?: number | null;
   counts: { done:number; partial:number; todo:number; bugs:number; blockers:number };
   agents: OfficeAgent[];
   findings: OfficeFinding[];
@@ -75,17 +76,14 @@ export interface RunnerProviderStatus {
 export interface RunnerStatus {
   available: boolean;
   selectedProvider: RunnerProvider;
-  activeProvider?: "cursor" | "claude" | null;
+  activeProvider?: RunnerProvider | null;
   runningCommandId?: string | null;
   parallel?: {
     max:number;
     active:number;
-    lanes:Array<{lane:string;commandId:string;provider:"cursor"|"claude"|null}>;
+    lanes:Array<{lane:string;commandId:string;provider:RunnerProvider|null}>;
   };
-  providers: {
-    cursor: RunnerProviderStatus;
-    claude: RunnerProviderStatus;
-  };
+  providers: Record<string, RunnerProviderStatus>;
 }
 
 export interface OfficeEvent {

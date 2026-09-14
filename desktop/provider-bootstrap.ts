@@ -35,6 +35,15 @@ export function discoverProviderCliExecutables(){
     ]),
     find("codex"),
     find("gemini"),
+    find("copilot"),
+    find("kimi"),
+    find("qwen"),
+    find("crush"),
+    find("pi"),
+    find("grok",[
+      path.join(home,".grok","bin","grok.exe"),
+      path.join(home,".grok","bin","grok")
+    ]),
     find("opencode"),
     find("gh")
   ];

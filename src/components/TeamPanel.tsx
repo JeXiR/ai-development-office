@@ -22,11 +22,11 @@ function AgentCard({
         </div>
         <span>{agent.role} · {statusLabel}</span>
         <small title={agent.task||noTask}>{agent.task||noTask}</small>
-        {typeof agent.progressPercent==="number"&&agent.sprintTotal?(
+        {typeof agent.progressPercent==="number"?(
           <div className="agent-sprint-progress">
             <div><span>SPRINT</span><b>{agent.progressPercent}%</b></div>
             <i><em style={{width:`${agent.progressPercent}%`}}/></i>
-            <small>{agent.sprintCompleted||0}/{agent.sprintTotal} completed{agent.queueCount?` · ${agent.queueCount} queued`:""}</small>
+            <small>{agent.sprintTotal?`${agent.sprintCompleted||0}/${agent.sprintTotal} completed${agent.queueCount?` · ${agent.queueCount} queued`:""}`:`${agent.progressPercent}%`}</small>
           </div>
         ):null}
         {agent.kind==="specialist"&&agent.capabilities?.length?(

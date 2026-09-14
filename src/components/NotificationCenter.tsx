@@ -17,7 +17,7 @@ function isFresh(time?:string|null,ttl=NOTICE_TTL_MS){
 }
 
 function isInfraNoise(text?:string|null){
-  return /task_failed|resource_exhausted|CallMe/i.test(String(text||""));
+  return /task_failed|resource_exhausted/i.test(String(text||""));
 }
 
 function isStaleVerdict(event:{event_type?:string;status?:string;message?:string|null;task?:string|null}){

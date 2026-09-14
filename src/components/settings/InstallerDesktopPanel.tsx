@@ -30,7 +30,7 @@ export function InstallerDesktopPanel(){
 
     <div className="installer-provider-row">
       <select value={provider} onChange={e=>setProvider(e.target.value)}>
-        <option value="cursor">Cursor</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="gemini">Gemini CLI</option><option value="opencode">OpenCode</option>
+        <option value="cursor">Cursor</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="gemini">Gemini CLI</option><option value="grok">Grok CLI</option><option value="opencode">OpenCode</option>
       </select>
       <button onClick={()=>send({action:"provider_install_launch",provider_id:provider})}>{t("settings.launchInstaller")}</button>
       <button onClick={()=>send({action:"first_run_diagnostics"})}>{t("settings.runDiagnostics")}</button>
@@ -40,6 +40,8 @@ export function InstallerDesktopPanel(){
       <span>{state.version?.packageVersion||"?"}</span>
       <span>{state.runtime?.platform||"?"} / {state.runtime?.arch||"?"}</span>
       <span>{state.diagnostics?.ready===true?t("common.ready"):state.diagnostics?t("common.failed"):t("common.unknown")}</span>
+      <span>{state.codesign?.signed?t("installer.signed"):state.codesign?.configured?t("installer.ready"):t("installer.unsigned")}</span>
+      {state.codesign?.reason?<small className="muted">{state.codesign.reason}</small>:null}
     </div>
 
     <div className="update-stage-row">

@@ -39,6 +39,8 @@ export function CallMeValidationPanel(){
   };
 
   const readiness=snapshot?.readiness;
+  if(!snapshot)return null;
+  if(!readiness?.detection?.isCallMeCompatible)return null;
 
   return <section className="panel callme-validation-panel" data-help="callme-validation">
     <div className="section-heading">

@@ -6,6 +6,7 @@ import { sendOffice } from "@/hooks/useOfficeSocket";
 import type { OfficeWorkItem, WorkItemType } from "@/types/work";
 import { ViewportModal, modalAnchorFromEvent, type ModalAnchor } from "./ViewportModal";
 import { useOfficeI18n } from "@/i18n/officeI18n";
+import { useFactoryStore } from "@/store/useFactoryStore";
 
 const filters:Array<"all"|WorkItemType>=["all","security","frontend","backend","test","docs","devops","database","feature"];
 
@@ -21,6 +22,8 @@ export function OperationsBoard(){
   const [modalAnchor,setModalAnchor]=useState<ModalAnchor|null>(null);
   const [executionMode,setExecutionMode]=useState<"solo"|"collaborative"|"competitive">("collaborative");
   const [codingCollaborators,setCodingCollaborators]=useState<string[]>([]);
+  const factory=useFactoryStore(s=>wb.projectId?s.byProject[wb.projectId]:null);
+  const factoryRunning=factory?.state.status==="running";
 
   const todo=useMemo(()=>{
     const rank=(item:OfficeWorkItem)=>{
@@ -37,9 +40,10 @@ export function OperationsBoard(){
   const fixing=useMemo(()=>wb.workItems.filter(x=>x.status==="working"),[wb.workItems]);
 
   const queue=(item:OfficeWorkItem,mode:"solo"|"collaborative"|"competitive"="collaborative")=>{
-    if(!window.confirm(t("tasks.assignConfirm").replace("{id}",item.id).replace("{mode}",mode).replace("{title}",item.title)))return;
+    if(!factoryRunning && !window.confirm(t("tasks.assignConfirm").replace("{id}",item.id).replace("{mode}",mode).replace("{title}",item.title)))return;
     send({action:"queue_work_item",project_id:wb.projectId,item:{...item,executionMode:mode,collaboratorCodingRoles:mode==="collaborative"?codingCollaborators:[]}});
   };
+  const finishRemaining=()=>send({action:"factory_start",project_id:wb.projectId});
 
   return (
     <>
@@ -48,6 +52,7 @@ export function OperationsBoard(){
           <div className="lane-head">
             <div><div className="eyebrow">{t("tasks.todoEyebrow")}</div><h2>{t("tasks.readyWork")} <span>{todo.length}</span></h2></div>
             <button className="mini-btn" onClick={()=>send({action:"queue_command",project_id:wb.projectId,command:"refresh backlog"})}>{t("queue.reaudit")}</button>
+            <button className="mini-btn" onClick={finishRemaining}>{t("tasks.finishRemaining")}</button>
           </div>
           <div className="lane-filters">
             {filters.map(f=><button className={filter===f?"active":""} key={f} onClick={()=>setFilter(f)}>{t(`tasks.filter.${f}`)}</button>)}

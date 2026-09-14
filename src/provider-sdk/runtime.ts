@@ -53,7 +53,11 @@ export class UniversalProviderRuntime{
     }
     if(request.preferredProvider===manifest.id){score+=50;reasons.push("preferred provider");}
     if(manifest.capabilities.local){score+=request.allowLocal===false?-100:5;reasons.push(manifest.capabilities.local?"local provider":"");}
-    if(["cursor","opencode"].includes(manifest.id)){score+=5;reasons.push("local CLI integration");}
+    if(["cursor","opencode"].includes(manifest.id)){score+=25;reasons.push("local CLI integration");}
+    if(manifest.id==="ollama"&&request.preferredProvider!=="ollama"){
+      score-=20;
+      reasons.push("ollama is opt-in");
+    }
     return {score,reasons:reasons.filter(Boolean)};
   }
 

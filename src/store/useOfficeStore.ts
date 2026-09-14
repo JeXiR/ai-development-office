@@ -20,6 +20,7 @@ export const EMPTY_STATE: OfficeState = {
   activeTask: null,
   health: "unknown",
   roadmapPercent: null,
+  remainingPercent: null,
   counts: { done: 0, partial: 0, todo: 0, bugs: 0, blockers: 0 },
   findings: [],
   agents: [],

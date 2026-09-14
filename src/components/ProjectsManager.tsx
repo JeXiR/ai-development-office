@@ -34,7 +34,7 @@ export function ProjectsManager(){
       <div className="section-heading"><div><div className="eyebrow">{t("projects.eyebrow")}</div><h2>{t("projects.title")}</h2><p className="muted">{t("projects.hint")}</p></div><strong>{t("projects.registeredCount").replace("{n}",String(projects.filter(p=>p.enabled).length))}</strong></div>
       <form onSubmit={submit} className="projects-inline-form">
         <label><span>{t("projects.path")}</span><input value={path} onChange={e=>setPath(e.target.value)} placeholder={"D:\\Projects\\project-two"}/></label>
-        <label><span>{t("switcher.name")} <em>{t("common.optional")}</em></span><input value={name} onChange={e=>setName(e.target.value)} placeholder="CallMe"/></label>
+        <label><span>{t("switcher.name")} <em>{t("common.optional")}</em></span><input value={name} onChange={e=>setName(e.target.value)} placeholder="My project"/></label>
         <button className="primary-btn" type="submit">{t("projects.add")}</button>
       </form>
       {message?<div className="form-message">{message}</div>:null}
@@ -48,7 +48,20 @@ export function ProjectsManager(){
         <div className="project-manage-controls">
           <button onClick={()=>selectProject(project.id)} disabled={project.id===activeProjectId}>{project.id===activeProjectId?t("projects.selected"):t("projects.open")}</button>
           <select value={project.provider||"auto"} onChange={e=>send({action:"set_project_provider",project_id:project.id,provider:e.target.value})}>
-            <option value="auto">auto</option><option value="cursor">Cursor</option><option value="claude">Claude</option>
+            <option value="auto">auto</option>
+            <option value="cursor">Cursor</option>
+            <option value="claude">Claude</option>
+            <option value="codex">Codex</option>
+            <option value="gemini">Gemini</option>
+            <option value="copilot">Copilot</option>
+            <option value="kimi">Kimi</option>
+            <option value="qwen">Qwen</option>
+            <option value="crush">Crush</option>
+            <option value="pi">Pi</option>
+            <option value="grok">Grok</option>
+            <option value="opencode">OpenCode</option>
+            <option value="custom">Custom</option>
+            <option value="local">Local</option>
           </select>
           <button onClick={()=>send({action:"set_project_trust",project_id:project.id,trusted:!project.runnerTrusted})}>{project.runnerTrusted?t("projects.lock"):t("projects.trust")}</button>
           <button className="danger-soft" onClick={()=>remove(project.id,project.name)}>{t("common.remove")}</button>

@@ -8,6 +8,7 @@ export type ProviderConfig={
 };
 
 export function providerConfigured(manifest:ProviderManifest){
+  if(manifest.id==="ollama")return Boolean(String(process.env.OLLAMA_MODEL||"").trim());
   if(manifest.transport==="cli")return true;
   if(manifest.transport==="local-http")return true;
   if(manifest.credentialEnv&&process.env[manifest.credentialEnv])return true;

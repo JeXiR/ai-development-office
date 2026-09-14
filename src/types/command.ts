@@ -70,6 +70,7 @@ export interface OfficeCommandRequest {
   isolationStatus?: "not_required" | "pending" | "ready" | "failed";
   worktreePaths?: Record<string,string>;
   mergeGateStatus?: "not_required" | "pending" | "passed" | "blocked" | "applied" | "failed";
+  mergeMethod?: "none" | "squash" | "patch" | "mixed";
   mergeGateSummary?: string | null;
   conflictFiles?: string[];
   competitiveWinner?: "cursor" | "claude" | null;

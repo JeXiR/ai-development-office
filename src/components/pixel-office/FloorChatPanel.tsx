@@ -35,11 +35,13 @@ export function FloorChatPanel(props:{agents:FloorChatAgent[];onAgentOpen?:(agen
     return names.size;
   },[props.agents]);
 
+  const visible=useMemo(()=>messages.slice().reverse(),[messages]);
+
   useEffect(()=>{
     const node=scroller.current;
     if(!node||!stick.current)return;
-    node.scrollTop=node.scrollHeight;
-  },[messages.length]);
+    node.scrollTop=0;
+  },[visible.length]);
 
   return <aside className="floor-chat-panel" aria-label={t("floorChat.title")}>
     <div className="floor-chat-head">
@@ -71,11 +73,11 @@ export function FloorChatPanel(props:{agents:FloorChatAgent[];onAgentOpen?:(agen
       ref={scroller}
       onScroll={e=>{
         const el=e.currentTarget;
-        stick.current=el.scrollHeight-el.scrollTop-el.clientHeight<48;
+        stick.current=el.scrollTop<48;
       }}
     >
-      {!messages.length?<div className="floor-chat-empty">{t("floorChat.empty")}</div>:null}
-      {messages.map(message=>(
+      {!visible.length?<div className="floor-chat-empty">{t("floorChat.empty")}</div>:null}
+      {visible.map(message=>(
         <article key={message.id} className={`floor-chat-line ${KIND_TONE[message.kind]||""}`}>
           <button type="button" className="floor-chat-avatar" aria-label={message.fromRole} onClick={()=>props.onAgentOpen?.(message.fromId)}>
             {initials(message.fromRole)}

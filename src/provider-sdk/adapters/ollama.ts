@@ -11,9 +11,13 @@ export class OllamaAdapter extends BaseProviderAdapter{
 
   async health():Promise<ProviderHealth>{
     const started=Date.now();
+    const model=String(process.env.OLLAMA_MODEL||"").trim();
+    if(!model){
+      return {providerId:this.manifest.id,available:false,latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),detail:"OLLAMA_MODEL is not configured."};
+    }
     try{
       const res=await fetch(`${this.baseUrl.replace(/\/+$/,"")}/api/tags`,{signal:AbortSignal.timeout(3000)});
-      return {providerId:this.manifest.id,available:res.ok,latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),detail:res.ok?"Ollama reachable":`HTTP ${res.status}`};
+      return {providerId:this.manifest.id,available:res.ok,latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),detail:res.ok?`Ollama reachable (${model})`:`HTTP ${res.status}`};
     }catch(error:any){
       return {providerId:this.manifest.id,available:false,latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),detail:String(error?.message||error)};
     }

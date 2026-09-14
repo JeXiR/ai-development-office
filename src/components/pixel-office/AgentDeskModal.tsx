@@ -111,7 +111,7 @@ export function AgentDeskModal({
             speech.stop();
           }}
         >{speech.listening?t("pixel.listening"):t("pixel.listen")}</button>
-        {hasSession?<button type="button" onClick={onOpenTerminal}>{t("pixel.openTerminal")}</button>:null}
+        <button type="button" onClick={onOpenTerminal}>{hasSession?t("pixel.openTerminal"):t("pixel.spawnTerminal")}</button>
         <button
           type="button"
           className="primary"

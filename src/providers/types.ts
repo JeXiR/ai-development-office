@@ -3,7 +3,14 @@ export type ProviderId=
   |"claude"
   |"codex"
   |"gemini"
+  |"copilot"
+  |"kimi"
+  |"qwen"
+  |"crush"
+  |"pi"
+  |"grok"
   |"opencode"
+  |"custom"
   |"local";
 
 export type ProviderHealthStatus="unknown"|"healthy"|"degraded"|"unavailable";

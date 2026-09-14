@@ -30,6 +30,55 @@ const definitions:ProviderDefinition[]=[
     defaultArgs:[]
   },
   {
+    id:"copilot",displayName:"GitHub Copilot CLI",
+    executableCandidates:["copilot","copilot.exe","copilot.cmd"],
+    capabilities:{coding:true,planning:true,review:true,security:false,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:1,outputCostWeight:1,relativeCost:1.0},
+    defaultArgs:[]
+  },
+  {
+    id:"kimi",displayName:"Kimi Code CLI",
+    executableCandidates:["kimi","kimi.exe","kimi.cmd"],
+    capabilities:{coding:true,planning:true,review:true,security:true,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:0.85,outputCostWeight:0.85,relativeCost:0.85},
+    defaultArgs:[]
+  },
+  {
+    id:"qwen",displayName:"Qwen Code",
+    executableCandidates:["qwen","qwen.exe","qwen.cmd"],
+    capabilities:{coding:true,planning:true,review:true,security:false,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:0.7,outputCostWeight:0.7,relativeCost:0.7},
+    defaultArgs:[]
+  },
+  {
+    id:"crush",displayName:"Crush",
+    executableCandidates:["crush","crush.exe"],
+    capabilities:{coding:true,planning:true,review:true,security:false,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:0.65,outputCostWeight:0.65,relativeCost:0.65},
+    defaultArgs:[]
+  },
+  {
+    id:"pi",displayName:"Pi",
+    executableCandidates:["pi","pi.exe"],
+    capabilities:{coding:true,planning:true,review:true,security:false,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:0.6,outputCostWeight:0.6,relativeCost:0.6},
+    defaultArgs:[]
+  },
+  {
+    id:"grok",displayName:"Grok CLI",
+    executableCandidates:["grok","grok.exe","grok.cmd"],
+    capabilities:{coding:true,planning:true,review:true,security:true,testing:true,local:false,resume:true,streaming:true},
+    cost:{inputCostWeight:0.9,outputCostWeight:0.9,relativeCost:0.9},
+    defaultArgs:[]
+  },
+  {
+    id:"custom",displayName:"Custom command",
+    executableCandidates:[],
+    capabilities:{coding:true,planning:true,review:true,security:false,testing:true,local:true,resume:false,streaming:false},
+    cost:{inputCostWeight:0.2,outputCostWeight:0.2,relativeCost:0.2},
+    defaultArgs:[]
+  },
+  {
     id:"opencode",displayName:"OpenCode",
     executableCandidates:["opencode","opencode.exe","opencode.cmd"],
     capabilities:{coding:true,planning:true,review:true,security:true,testing:true,local:false,resume:true,streaming:true},

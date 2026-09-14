@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
+import path from "node:path";
 import {getUniversalProviderRuntime} from "./provider-universal-runtime";
+import {ensureOfficeProjectDocs,isDocsBootstrapGoal} from "../src/project-intelligence/docs-bootstrap";
 import {createMissionWorkspace} from "../src/project-execution/worktree";
 import {executeProjectTool} from "../src/project-execution/tool-executor";
 import {normalizeProviderToolCalls} from "../src/project-execution/tool-call-parser";
@@ -24,6 +26,23 @@ export async function executeRealProjectMission(data:any){
   const model=data?.model?String(data.model):undefined;
   const missionId=String(data?.missionId||crypto.randomUUID());
   if(!projectPath||!goal)throw new Error("projectPath and goal are required.");
+
+  if(isDocsBootstrapGoal(goal)){
+    const created=ensureOfficeProjectDocs({
+      projectPath,
+      projectName:String(data?.projectName||path.basename(projectPath)||"Project"),
+      brief:String(data?.brief||goal)
+    });
+    return {
+      missionId,
+      workspaceMode:"inplace",
+      workspacePath:projectPath,
+      localDocs:true,
+      created,
+      changed:true,
+      verification:{testsPassed:null,hasDiff:true,hasStatus:true}
+    };
+  }
 
   const workspace=createMissionWorkspace(projectPath,missionId);
   const beforeHead=projectGitHead(workspace.path);

@@ -4,6 +4,9 @@ import os from "node:os";
 import { createHash } from "node:crypto";
 import { loadEnvFile } from "node:process";
 import { generateFeatureContracts, generateProjectCoverage } from "./coverage-engine";
+import { checklistCompletion, normalizeProgressTitle, openProgressItems, parseProgressItems } from "../src/project-intelligence/progress-completer";
+import { sprintProgressPercent } from "../src/factory/command-progress";
+import { isInFlightCommandStatus, pickLatestRelatedCommand, shouldKeepVanishedWorkItem } from "../src/work/reconcile-work-ledger";
 
 const envLocal = path.resolve(process.cwd(), ".env.local");
 if (fs.existsSync(envLocal)) loadEnvFile(envLocal);
@@ -58,7 +61,8 @@ function projects(): Project[] {
   }
 
   try {
-    return JSON.parse(fs.readFileSync(projectsFile, "utf8"));
+    const rows=JSON.parse(fs.readFileSync(projectsFile, "utf8"));
+    return (Array.isArray(rows)?rows:[]).filter((project:Project)=>project&&project.enabled!==false);
   } catch {
     return [];
   }
@@ -70,6 +74,43 @@ function read(file: string) {
 
 function readJson(file: string): any {
   try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return {}; }
+}
+
+const VOLATILE_KIT_KEYS=new Set(["generatedAt","lastSeenAt","updatedAt"]);
+const lastLogs=new Map<string,string>();
+
+function stableKitPayload(value:unknown):unknown{
+  if(Array.isArray(value))return value.map(stableKitPayload);
+  if(value&&typeof value==="object"){
+    const out:Record<string,unknown>={};
+    for(const [key,entry] of Object.entries(value as Record<string,unknown>)){
+      if(VOLATILE_KIT_KEYS.has(key))continue;
+      out[key]=stableKitPayload(entry);
+    }
+    return out;
+  }
+  return value;
+}
+
+function writeJsonIfChanged(file:string, value:unknown){
+  const next=JSON.stringify(value,null,2);
+  try{
+    const prev=JSON.parse(fs.readFileSync(file,"utf8"));
+    if(JSON.stringify(stableKitPayload(prev))===JSON.stringify(stableKitPayload(value)))return false;
+  }catch{}
+  fs.writeFileSync(file,next);
+  return true;
+}
+
+function kitLogKey(state:any){
+  return JSON.stringify({
+    id:state.projectId,
+    task:state.activeTask,
+    health:state.health,
+    counts:state.counts,
+    summary:state.workbenchSummary,
+    milestone:state.milestone
+  });
 }
 
 function readJsonArray(file: string): any[] {
@@ -192,7 +233,6 @@ function reconcileFindings(project: Project, progress: string, securityAudit: st
     const related = commandHistory.find((c) => c.projectId === project.id && c.findingId === id);
 
     current.firstSeenAt = old?.firstSeenAt || now;
-    current.updatedAt = now;
     current.assignedRole = related?.assignedRole || old?.assignedRole || null;
     current.lastResult = related?.message || old?.lastResult || null;
 
@@ -205,6 +245,14 @@ function reconcileFindings(project: Project, progress: string, securityAudit: st
     if (current.status === "fixed") {
       current.fixedAt = old?.fixedAt || now;
     }
+
+    const unchanged=!!old
+      && old.status===current.status
+      && old.title===current.title
+      && old.severity===current.severity
+      && (old.assignedRole||null)===(current.assignedRole||null)
+      && (old.lastResult||null)===(current.lastResult||null);
+    current.updatedAt = unchanged ? (old?.updatedAt || now) : now;
   }
 
   // Preserve history for findings no longer listed.
@@ -215,12 +263,14 @@ function reconcileFindings(project: Project, progress: string, securityAudit: st
       (c) => c.projectId === project.id && c.findingId === old.id && c.status === "completed"
     );
 
+    const nextStatus=relatedCompleted ? "fixed" : old.status;
+    const nextResult=relatedCompleted?.message || old.lastResult || null;
     currentMap.set(old.id, {
       ...old,
-      status: relatedCompleted ? "fixed" : old.status,
-      updatedAt: now,
+      status: nextStatus,
+      updatedAt: nextStatus===old.status && nextResult===old.lastResult ? old.updatedAt : now,
       fixedAt: relatedCompleted ? (old.fixedAt || relatedCompleted.completedAt || now) : old.fixedAt,
-      lastResult: relatedCompleted?.message || old.lastResult || null,
+      lastResult: nextResult,
       assignedRole: relatedCompleted?.assignedRole || old.assignedRole || null,
     });
   }
@@ -233,7 +283,7 @@ function reconcileFindings(project: Project, progress: string, securityAudit: st
       a.id.localeCompare(b.id, undefined, { numeric: true });
   });
 
-  fs.writeFileSync(ledgerPath, JSON.stringify(list, null, 2));
+  writeJsonIfChanged(ledgerPath, list);
   
 // Canonical/evidence reconciliation: explicit FIXED + re-verified evidence,
 // or the canonical H1-H14 fixed statement, wins over stale historic runner failures.
@@ -254,7 +304,7 @@ const reconciled=list.map((finding:any)=>{
   }
   return finding;
 });
-fs.writeFileSync(ledgerPath,JSON.stringify(reconciled,null,2));
+writeJsonIfChanged(ledgerPath,reconciled);
 return reconciled;
 
 }
@@ -314,9 +364,10 @@ function liveAgentOverlay(project:Project){
   for(const command of commands){
     const id=normalizedAgentKey(String(command.assignedRole||command.assignedAgentId||command.executionLane||""));
     if(!id||id==="general")continue;
-    const ts=Date.parse(command.updatedAt||command.createdAt||"");
+    const live=["queued","waiting_for_agent","planning","plan_ready","running","verifying"].includes(String(command.status||""));
+    const ts=live?now:Date.parse(command.updatedAt||command.startedAt||command.completedAt||command.createdAt||"");
     if(!Number.isFinite(ts))continue;
-    const status=command.status==="planning"?"planning":
+    const status=command.status==="planning"||command.status==="plan_ready"?"planning":
       command.status==="verifying"?"testing":
       ["queued","waiting_for_agent","running"].includes(command.status)?"working":
       command.status==="completed"?"done":
@@ -324,7 +375,7 @@ function liveAgentOverlay(project:Project){
     if(!status)continue;
     const existing=overlay[id];
     if(!existing||ts>=existing.timestamp){
-      overlay[id]={status,task:command.title||command.command||null,timestamp:ts};
+      overlay[id]={status,task:command.workItemTitle||command.title||command.command||null,timestamp:ts};
     }
   }
 
@@ -428,6 +479,10 @@ function activeScopeEvidence(project:Project,ruleId:string,sourceText:string){
   if(ruleId==="postgres")return /database\.postgres|postgresql|DB_CONNECTION\s*=\s*pgsql/i.test(sourceText);
   if(ruleId==="aws")return /infra\.aws|active.*aws|\baws-sdk\b|@aws-sdk\//i.test(sourceText);
   if(ruleId==="docker")return fs.existsSync(path.join(project.path,"Dockerfile")) || fs.existsSync(path.join(project.path,"docker-compose.yml")) || /infra\.docker/i.test(sourceText);
+  if(ruleId==="react-native"){
+    const pkg=read(path.join(project.path,"package.json"));
+    return /"react-native"\s*:/i.test(pkg) || fs.existsSync(path.join(project.path,"metro.config.js"));
+  }
   return true;
 }
 
@@ -469,7 +524,7 @@ function resolveOrganization(project:Project){
 
   const ai=path.join(project.path,".ai-kit");
   fs.mkdirSync(ai,{recursive:true});
-  fs.writeFileSync(path.join(ai,"office-organization.json"),JSON.stringify(organization,null,2));
+  writeJsonIfChanged(path.join(ai,"office-organization.json"),organization);
   return organization;
 }
 
@@ -505,9 +560,8 @@ function roleSprintProgress(projectId:string,agentId:string,role:string){
   const active=sprint.filter((c:any)=>["planning","plan_ready","running","verifying"].includes(c.status)).length;
   const queued=sprint.filter((c:any)=>["queued","waiting_for_agent"].includes(c.status)).length;
 
-  // Progress is sprint-stage based: only completed tasks count as complete.
-  const percent=sprint.length?Math.round(completed/sprint.length*100):null;
-  return {percent,queueCount:queued,total:sprint.length,completed,active};
+  const live=sprintProgressPercent(sprint);
+  return {percent:live.percent,queueCount:queued,total:sprint.length,completed,active};
 }
 
 function agents(project:Project, task:any, findings:Finding[]){
@@ -601,10 +655,6 @@ function productDocPriority(text:string){
   return priority==="info"?"medium":priority;
 }
 
-function harvestScanPriority(status:string){
-  return status==="missing"?"low":"info";
-}
-
 function workSortRank(item:{source?:string;priority?:string;id?:string}){
   const source=String(item.source||"");
   const sourceRank=PRODUCT_WORK_SOURCES.has(source)?(
@@ -662,6 +712,22 @@ function safeId(prefix:string,text:string,index:number){
   return `${prefix}-${String(index+1).padStart(2,"0")}-${slug||"item"}`;
 }
 
+function doneTitlesInProjectDocs(project:Project){
+  const titles:string[]=[];
+  for(const rel of ["PROGRESS.md","docs/ROADMAP.md"]){
+    const text=read(path.join(project.path,...rel.split("/")));
+    if(!text)continue;
+    for(const item of parseProgressItems(text))if(item.done)titles.push(item.title);
+  }
+  return titles;
+}
+
+function titleAlreadyComplete(project:Project, title:string, extraDone:string[]=[]){
+  const needle=normalizeProgressTitle(title);
+  if(!needle)return false;
+  return extraDone.concat(doneTitlesInProjectDocs(project)).some(done=>normalizeProgressTitle(done)===needle);
+}
+
 function harvestCheckboxLines(
   project:Project,
   fileRel:string,
@@ -675,22 +741,30 @@ function harvestCheckboxLines(
   const lines=text.split(/\r?\n/);
   const out:WorkItem[]=[];
   let seq=0;
+  const fileDone:string[]=[];
+  const pending:{i:number;done:boolean;title:string}[]=[];
 
   lines.forEach((line,i)=>{
     const checkbox=line.match(/^\s*-\s+\[([ xX])\]\s+(.+?)\s*$/);
     if(!checkbox)return;
     const done=checkbox[1].toLowerCase()==="x";
-    if(done&&!includeDone)return;
     let title=checkbox[2].replace(/\*\*/g,"").replace(/~~/g,"").trim();
     if(!title||/none recorded/i.test(title))return;
-    const deferred=/deferred/i.test(title);
-    const type=typeFromText(title);
+    if(done)fileDone.push(title);
+    pending.push({i,done,title});
+  });
+
+  pending.forEach(row=>{
+    if(row.done&&!includeDone)return;
+    if(!row.done&&titleAlreadyComplete(project,row.title,fileDone))return;
+    const deferred=/deferred/i.test(row.title);
+    const type=typeFromText(row.title);
     out.push({
-      id:safeId(prefix,title,seq++),projectId:project.id,type,title,
-      description:null,status:done?"done":deferred?"deferred":"todo",
-      priority:source==="roadmap"?productDocPriority(title):workPriorityFromText(title),source,sourceFile:fileRel,sourceLine:i+1,
-      assignedRole:roleForWork(type),evidence:[`${fileRel}:${i+1}`],acceptanceCriteria:[],
-      createdAt:nowIso(),updatedAt:nowIso(),completedAt:done?nowIso():null,
+      id:safeId(prefix,row.title,seq++),projectId:project.id,type,title:row.title,
+      description:null,status:row.done?"done":deferred?"deferred":"todo",
+      priority:source==="roadmap"?productDocPriority(row.title):workPriorityFromText(row.title),source,sourceFile:fileRel,sourceLine:row.i+1,
+      assignedRole:roleForWork(type),evidence:[`${fileRel}:${row.i+1}`],acceptanceCriteria:[],
+      createdAt:nowIso(),updatedAt:nowIso(),completedAt:row.done?nowIso():null,
       deferredReason:deferred?"Marked deferred in source docs":null
     });
   });
@@ -700,49 +774,37 @@ function harvestCheckboxLines(
 function harvestProgressTodo(project:Project):WorkItem[]{
   const text=read(path.join(project.path,"PROGRESS.md"));
   if(!text)return[];
-  const section=text.match(/## Todo([\s\S]*?)(?:\n## |\s*$)/i)?.[1]||"";
-  const lines=section.split(/\r?\n/);
-  const out:WorkItem[]=[];
-  let seq=0;
-  lines.forEach((line,i)=>{
-    const m=line.match(/^\s*-\s+(.+)/);
-    if(!m)return;
-    const title=m[1].replace(/\*\*/g,"").trim();
-    if(!title)return;
-    const deferred=/deferred/i.test(title);
-    const type=typeFromText(title);
-    out.push({
-      id:safeId("PROG",title,seq++),projectId:project.id,type,title,
-      status:deferred?"deferred":"todo",priority:productDocPriority(title),source:"progress",
-      sourceFile:"PROGRESS.md",assignedRole:roleForWork(type),evidence:["PROGRESS.md"],
-      acceptanceCriteria:[],createdAt:nowIso(),updatedAt:nowIso(),
-      deferredReason:deferred?"Marked deferred in PROGRESS.md":null
+  return openProgressItems(text)
+    .filter(item=>!/^next actions$/i.test(item.section))
+    .filter(item=>!titleAlreadyComplete(project,item.title))
+    .map((item)=>{
+      const deferred=/deferred/i.test(item.title);
+      const type=typeFromText(item.title);
+      return {
+        id:safeId("PROG",item.title,0),projectId:project.id,type,title:item.title,
+        status:deferred?"deferred":"todo",priority:productDocPriority(item.title),source:"progress",
+        sourceFile:"PROGRESS.md",assignedRole:roleForWork(type),evidence:[`PROGRESS.md:${item.lineIndex+1}`],
+        acceptanceCriteria:[],createdAt:nowIso(),updatedAt:nowIso(),
+        deferredReason:deferred?"Marked deferred in PROGRESS.md":null
+      };
     });
-  });
-  return out;
 }
 
 function harvestNextActions(project:Project):WorkItem[]{
   const text=read(path.join(project.path,"PROGRESS.md"));
   if(!text)return[];
-  const section=text.match(/## Next Actions([\s\S]*?)(?:\n## |\s*$)/i)?.[1]||"";
-  const lines=section.split(/\r?\n/);
-  const out:WorkItem[]=[];
-  let seq=0;
-  lines.forEach((line)=>{
-    const m=line.match(/^\s*\d+\.\s+(.+)/);
-    if(!m)return;
-    const title=m[1].replace(/\*\*/g,"").trim();
-    if(!title||/do not re-scaffold/i.test(title))return;
-    const type=typeFromText(title);
-    out.push({
-      id:safeId("NEXT",title,seq++),projectId:project.id,type,title,status:"todo",
-      priority:productDocPriority(title),source:"progress",sourceFile:"PROGRESS.md",
-      assignedRole:roleForWork(type),evidence:["PROGRESS.md#Next Actions"],acceptanceCriteria:[],
-      createdAt:nowIso(),updatedAt:nowIso()
+  return openProgressItems(text)
+    .filter(item=>/^next actions$/i.test(item.section))
+    .filter(item=>!/do not re-scaffold/i.test(item.title))
+    .map((item)=>{
+      const type=typeFromText(item.title);
+      return {
+        id:safeId("NEXT",item.title,0),projectId:project.id,type,title:item.title,status:"todo",
+        priority:productDocPriority(item.title),source:"progress",sourceFile:"PROGRESS.md",
+        assignedRole:roleForWork(type),evidence:["PROGRESS.md#Next Actions"],acceptanceCriteria:[],
+        createdAt:nowIso(),updatedAt:nowIso()
+      };
     });
-  });
-  return out;
 }
 
 function scanFrontend(project:Project){
@@ -921,14 +983,7 @@ function mergeWorkItems(project:Project, raw:WorkItem[], findings:any[], options
       } as WorkItem;
     }
 
-    const related=commands
-      .filter((c:any)=>c&&c.projectId===project.id)
-      .find((c:any)=>{
-        const wid=safeString(c.workItemId);
-        const fid=safeString(c.findingId);
-        return (wid&&wid===safeString(candidate.id)) ||
-          (fid&&safeString(candidate.id).includes(fid));
-      });
+    const related=pickLatestRelatedCommand(commands, project.id, safeString(candidate.id));
 
     if(related){
       candidate.commandId=safeString(related.id,candidate.commandId);
@@ -936,7 +991,7 @@ function mergeWorkItems(project:Project, raw:WorkItem[], findings:any[], options
       if(related.status==="completed"){
         candidate.status="done";
         candidate.verificationStatus=related.qualityGateStatus==="verified"?"verified":"pending_reaudit";
-      }else if(["running","planning","verifying","waiting_for_agent"].includes(related.status)){
+      }else if(isInFlightCommandStatus(related.status)){
         candidate.status="working";
       }
     }
@@ -947,20 +1002,24 @@ function mergeWorkItems(project:Project, raw:WorkItem[], findings:any[], options
     merged.push(candidate);
   }
 
-  // Preserve active legacy rows not regenerated this pass, but only after
-  // normalization. Terminal historical rows are intentionally not resurrected.
+  // Preserve vanished rows only while a related command is still in flight.
+  // Checked PROGRESS/ROADMAP lines drop out of harvest; keeping them as
+  // `working` left Active Work stuck after the factory had already finished.
   for(const previous of normalizedOld){
     const key=keyFor(previous);
     if(seen.has(key))continue;
-    if(["done","fixed","cancelled","failed"].includes(String(previous.status)))continue;
-    if(options?.canonical&&HARVEST_NOISE_SOURCES.has(String(previous.source))&&!["working","queued"].includes(String(previous.status)))continue;
+    const related=pickLatestRelatedCommand(commands, project.id, safeString(previous.id));
+    if(!shouldKeepVanishedWorkItem(previous, related))continue;
 
     merged.push({
       ...previous,
       source:normalizeSource(previous),
       title:normalizeTitle(previous),
+      status:"working",
+      commandId:safeString(related?.id, previous.commandId),
+      lastResult:safeString(related?.message, previous.lastResult),
       updatedAt:safeString(previous.updatedAt,nowIso()),
-      lastSeenAt:safeString(previous.lastSeenAt,nowIso())
+      lastSeenAt:nowIso()
     });
     seen.add(key);
   }
@@ -998,26 +1057,7 @@ function canonicalWorkItem(project:Project,item:any):WorkItem{
   } as WorkItem;
 }
 
-function resolvedHistoricalText(text:string){
-  const t=String(text||"").toLowerCase();
-  return /\b(fixed|resolved|re-verified|reverified|already remediated|already fixed|closed)\b/.test(t)
-    || /not authoritative|stale plan|historical/.test(t);
-}
-
-function coverageWorkType(domain:string){
-  if(domain==="tests")return "test";
-  if(domain==="ai-integrations")return "feature";
-  return ["backend","frontend","security","database","docs","devops"].includes(domain)?domain:"feature";
-}
-function coverageRole(domain:string){
-  const map:Record<string,string>={
-    backend:"Backend",frontend:"Frontend",security:"Security",tests:"QA",
-    database:"Database",docs:"Docs",devops:"DevOps","ai-integrations":"Backend"
-  };
-  return map[domain]||"Backend";
-}
-
-function generateWorkbench(project:Project, findings:any[], coverage?:any, featureState?:any){
+function generateWorkbench(project:Project, findings:any[], _coverage?:any, _featureState?:any){
   const raw:WorkItem[]=[
     ...harvestProgressTodo(project),
     ...harvestNextActions(project),
@@ -1027,72 +1067,9 @@ function generateWorkbench(project:Project, findings:any[], coverage?:any, featu
   ];
 
   const frontendCoverage=scanFrontend(project);
-  for(const gap of frontendCoverage){
-    if(gap.status==="verified")continue;
-    raw.push({
-      id:`FE-${gap.id}`,projectId:project.id,type:"frontend",
-      title:`Frontend audit: ${gap.label}`,
-      description:gap.gaps.join("; "),
-      status:"todo",priority:harvestScanPriority(gap.status),
-      source:"frontend-audit",sourceFile:null,assignedRole:"Frontend",
-      evidence:gap.evidence,acceptanceCriteria:gap.gaps,
-      createdAt:nowIso(),updatedAt:nowIso(),lastSeenAt:nowIso(),verificationStatus:"unverified"
-    });
-  }
 
-  // Coverage checks are actionable work, not just percentages.
-  if(coverage?.domains){
-    for(const [domain,report] of Object.entries(coverage.domains) as Array<[string,any]>){
-      for(const c of report.checks||[]){
-        if(!["missing","partial"].includes(c.status))continue;
-        const type=coverageWorkType(domain);
-        raw.push({
-          id:`COV-${domain.toUpperCase()}-${String(c.id).replace(/[^a-zA-Z0-9_-]/g,"-")}`,
-          projectId:project.id,type,
-          title:`${domain}: ${c.label}`,
-          description:(c.gaps||[]).join("; ")||`Improve ${domain} coverage for ${c.label}.`,
-          status:"todo",priority:harvestScanPriority(c.status),
-          source:"coverage",sourceFile:".ai-kit/project-coverage.json",
-          assignedRole:coverageRole(domain),evidence:c.evidence||[],
-          acceptanceCriteria:[
-            `Coverage check '${c.label}' must no longer be MISSING/PARTIAL after re-audit.`,
-            ...(c.gaps||[])
-          ],
-          createdAt:nowIso(),updatedAt:nowIso(),lastSeenAt:nowIso(),verificationStatus:"unverified"
-        });
-      }
-    }
-  }
-
-  // Feature surfaces become concrete work items too, but historical FIXED/
-  // resolved audit text must never be turned back into actionable product work.
-  for(const contract of featureState?.contracts||[]){
-    if(resolvedHistoricalText(`${contract?.name||""} ${contract?.description||""}`))continue;
-    for(const s of contract.surface||[]){
-      if(!["missing","partial"].includes(s.status))continue;
-      if(s.level==="excluded"||s.level==="decision_required")continue;
-
-      const inferredType =
-        /test/i.test(s.key)?"test":
-        /authorization|security/i.test(s.key)?"security":
-        contract.archetype==="dashboard"?"frontend":
-        "feature";
-
-      raw.push({
-        id:`FC-${contract.id}-${s.key}`,projectId:project.id,type:inferredType,
-        title:`${contract.name}: ${s.label}`,
-        description:`Feature contract ${contract.archetype} expects ${s.label}.`,
-        status:"todo",priority:harvestScanPriority(s.status),
-        source:"feature-contract",sourceFile:".ai-kit/feature-contracts.json",
-        assignedRole:roleForWork(inferredType,`${contract.name} ${s.label}`),
-        evidence:s.evidence||[],acceptanceCriteria:[
-          `${s.label} must be VERIFIED by feature coverage re-audit.`,
-          ...(s.gaps||[])
-        ],
-        createdAt:nowIso(),updatedAt:nowIso(),lastSeenAt:nowIso(),verificationStatus:"unverified"
-      });
-    }
-  }
+  // Coverage, feature-contract and frontend-audit scans stay informational.
+  // They must not mint Ready Work or factory items unless the user assigns them.
 
   // Canonical backlog is the source of truth when present. Coverage and
   // feature-contract scans remain informative, but cannot inflate Ready Work.
@@ -1115,7 +1092,7 @@ function generateWorkbench(project:Project, findings:any[], coverage?:any, featu
     frontendUnknown:frontendCoverage.filter((x:any)=>x.status==="unknown").length
   };
   const result={projectId:project.id,generatedAt:nowIso(),workItems,frontendCoverage,summary};
-  fs.writeFileSync(path.join(project.path,".ai-kit","office-workbench.json"),JSON.stringify(result,null,2));
+  writeJsonIfChanged(path.join(project.path,".ai-kit","office-workbench.json"),result);
   return result;
 }
 
@@ -1192,10 +1169,7 @@ function generateAgentAnalytics(project:Project){
     parallelPeak
   };
 
-  fs.writeFileSync(
-    path.join(project.path,".ai-kit","office-agent-analytics.json"),
-    JSON.stringify(analytics,null,2)
-  );
+  writeJsonIfChanged(path.join(project.path,".ai-kit","office-agent-analytics.json"),analytics);
   return analytics;
 }
 
@@ -1217,7 +1191,7 @@ function syncProject(project: Project) {
   const heuristicCoverage = generateProjectCoverage(project, featureContracts, reconciledFindings, initialWorkbench.frontendCoverage);
   const agentCoveragePath=path.join(ai,"project-coverage.agent.json");
   const heuristicCoveragePath=path.join(ai,"project-coverage.heuristic.json");
-  fs.writeFileSync(heuristicCoveragePath,JSON.stringify(heuristicCoverage,null,2));
+  writeJsonIfChanged(heuristicCoveragePath,heuristicCoverage);
 
   const agentCoverage=readJson(agentCoveragePath);
   const confidenceRank:Record<string,number>={low:1,medium:2,high:3};
@@ -1247,7 +1221,15 @@ function syncProject(project: Project) {
       }
     : {...heuristicCoverage,selectedSource:"office-heuristic"};
 
-  fs.writeFileSync(path.join(ai,"project-coverage.json"),JSON.stringify(projectCoverage,null,2));
+  if(typeof heuristicCoverage.backlogPercent==="number"){
+    projectCoverage.backlogPercent=heuristicCoverage.backlogPercent;
+    projectCoverage.remainingPercent=heuristicCoverage.remainingPercent;
+    if(agentUsable){
+      projectCoverage.overallScore=Math.round(Number(agentCoverage.overallScore||0)*0.35+heuristicCoverage.backlogPercent*0.65);
+    }
+  }
+
+  writeJsonIfChanged(path.join(ai,"project-coverage.json"),projectCoverage);
 
   // Pass 2 converts current coverage/feature gaps into actionable work and
   // reconciles stale items out of Ready Work when their source gap is gone.
@@ -1255,6 +1237,7 @@ function syncProject(project: Project) {
   generateAgentAnalytics(project);
 
   const organization=resolveOrganization(project);
+  const backlog=checklistCompletion([progress,read(path.join(project.path,"docs","ROADMAP.md"))]);
   const state = {
     projectId: project.id,
     projectName:
@@ -1272,6 +1255,7 @@ function syncProject(project: Project) {
       || null,
     health: health(counts),
     roadmapPercent: (()=>{
+      if(backlog.percent!=null)return backlog.percent;
       if(reconciledFindings.length){
         const fixed=reconciledFindings.filter((f:any)=>f.status==="fixed").length;
         return Math.round(fixed/reconciledFindings.length*100);
@@ -1280,6 +1264,7 @@ function syncProject(project: Project) {
       if(!total)return 0;
       return Math.round((counts.done+counts.partial*0.5)/total*100);
     })(),
+    remainingPercent: backlog.remaining,
     counts,
     findings: reconciledFindings,
     agents: agents(project, task, reconciledFindings),
@@ -1292,10 +1277,14 @@ function syncProject(project: Project) {
     workbenchSummary: workbench.summary,
   };
 
-  const serialized = JSON.stringify(state);
+  const serialized = JSON.stringify(stableKitPayload(state));
   if (serialized !== lastStates.get(project.id)) {
-    fs.writeFileSync(path.join(ai, "office-state.json"), JSON.stringify(state, null, 2));
+    writeJsonIfChanged(path.join(ai, "office-state.json"), state);
     lastStates.set(project.id, serialized);
+  }
+  const logKey=kitLogKey(state);
+  if (lastLogs.get(project.id) !== logKey) {
+    lastLogs.set(project.id, logKey);
     console.log(`[KIT] ${project.name} changed · ${state.activeTask ?? "no active task"}`);
   }
 }

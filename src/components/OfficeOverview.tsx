@@ -5,6 +5,8 @@ import { LiveTaskStrip } from "./pixel-office/LiveTaskStrip";
 import { ProjectProgressStrip } from "./ProjectProgressStrip";
 import { AgentSquadStrip } from "./AgentSquadStrip";
 import { DecisionCenter } from "./DecisionCenter";
+import { FactoryPanel } from "./FactoryPanel";
+import { CoordinationPanel } from "./CoordinationPanel";
 import { useActiveProjectQueue, useActiveProjectWorkbench } from "@/hooks/useActiveProject";
 import { useLiveOfficeState } from "@/hooks/useLiveOfficeAgents";
 import { useOfficeI18n } from "@/i18n/officeI18n";
@@ -17,6 +19,8 @@ export function OfficeOverview(){
   const active=state.activeCount;
   return <>
     <PixelOfficeRuntime/>
+    <FactoryPanel/>
+    <CoordinationPanel/>
     <ProjectProgressStrip/>
     <LiveTaskStrip/>
     <section className="office-kpis">

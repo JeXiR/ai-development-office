@@ -19,7 +19,20 @@ const scripts=[
   "ui-copy:audit",
   "final-four:smoke",
   "runtime-stability:smoke",
-  "unified-integration:smoke"
+  "unified-integration:smoke",
+  "progress-completer:smoke",
+  "hive-mailbox:smoke",
+  "autonomous-factory:smoke",
+  "work-ledger:smoke",
+  "cli-usage:smoke",
+  "win-cli:smoke",
+  "memory-palace:smoke",
+  "package-desktop:smoke",
+  "factory-live:smoke",
+  "coordination:smoke",
+  "squash-merge:smoke",
+  "plan-paths:smoke",
+  "observability-templates:smoke"
 ];
 
 const failed:string[]=[];

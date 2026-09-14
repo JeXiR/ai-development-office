@@ -12,6 +12,25 @@ import type {RuntimeProvider} from "../src/runtime/types";
 import {WorkspaceService} from "../src/workspace/service";
 import {WorkspaceWatcher} from "../src/workspace/watcher";
 import {CollaborationService} from "../src/collaboration/service";
+import {formatHivePtyMessage,hiveContext,hiveHandshake,hivePtyRelay,roleToAgentId} from "../src/collaboration/hive";
+import {canonicalConflictFiles,extractTestFailures,isNonShippingExecutorResult,livingProgressPrompt,parseProgressItems,titlesMatch,writeLivingProgressFile,writeProgressFile} from "../src/project-intelligence/progress-completer";
+import {collectWhereHits,preferWindowsCli,spawnEnv,wrapWindowsCli} from "../src/providers/win-cli";
+import {keepResolvedExecutable} from "../src/providers/resolver";
+import {applyFactoryBudget,completeFactoryIfIdle,DEFAULT_FACTORY_SETTINGS,emptyFactoryState,factoryElapsedMinutes,pickNextFactoryItems,recordFactoryResult,shouldApplySessionBudget,type FactorySettings,type FactoryState} from "../src/factory/autonomous-factory";
+import {isEmptyCodingSkip,isProviderAuthFailure,keepLeadOnOverlap,MIN_PLAN_CHARS,shouldRetryShortPlan} from "../src/factory/isolation-merge";
+import {estimateCostUsd,estimateTokensFromText} from "../src/factory/agent-budget";
+import {resolveCliUsage} from "../src/factory/cli-usage";
+import {buildCliLaunch,QUEUE_PROVIDERS} from "../src/providers/cli-launch";
+import {askCli} from "../src/providers/cross-cli";
+import {claimLease,leaseTargets,listLeases,releaseLease,renewLease,sweepOrphanLeases} from "../src/coordination/leases";
+import {abortFactoryMerge,beginFactoryMerge,commitDirtyWorktree,commitFactoryKit,commitWorktree,finishFactoryMerge,isFactoryKitPath,isProductSourcePath,recordMergeMethod,squashBranch,type FactoryMergeSession} from "../src/coordination/squash-merge";
+import {currentTaskWorkItem,extractPlanPaths,stampImplementationPlan,withImplementationAllowedFiles} from "../src/coordination/plan-paths";
+import {applyGroupTemplate,listGroupTemplates,resolveGroupTemplate} from "../src/coordination/group-templates";
+import {appendToolEvent,toolTreeSnapshot} from "../src/observability/tool-tree";
+import {codesignStatus} from "../desktop/codesign";
+import {officeMcpConfig} from "../src/providers/office-mcp";
+import {evaluateReceipt,listReceipts,receiptFor,writeReceipt} from "../src/factory/verify-receipt";
+import {graphSnapshot,palaceContext,rememberHandoff} from "../src/memory-v2/graph";
 import {MemoryService} from "../src/memory/service";
 import {SafetyService} from "../src/safety/service";
 import {ProviderEngine} from "../src/providers/engine";
@@ -114,8 +133,8 @@ for (const [oldName, target] of [
   if (!fs.existsSync(target) && fs.existsSync(old)) fs.copyFileSync(old, target);
 }
 
-type Provider = "auto" | "cursor" | "claude";
-type ActiveProvider = "cursor" | "claude";
+type Provider = "auto" | ProviderId;
+type ActiveProvider = ProviderId;
 type Project = { id:string; name:string; path:string; enabled:boolean; provider?:Provider; runnerTrusted?:boolean };
 type CommandHistory = {
   id:string; projectId:string; projectPath:string; command:string; status:string;
@@ -140,6 +159,7 @@ type CommandHistory = {
   isolationStatus?:"not_required"|"pending"|"ready"|"failed";
   worktreePaths?:Record<string,string>;
   mergeGateStatus?:"not_required"|"pending"|"passed"|"blocked"|"applied"|"failed";
+  mergeMethod?:"none"|"squash"|"patch"|"mixed";
   mergeGateSummary?:string|null;
   conflictFiles?:string[];
   competitiveWinner?:"cursor"|"claude"|null;
@@ -161,6 +181,9 @@ type Settings = {
   retention?:{reportsDays:number;auditDays:number;worktreeDays:number};
   officeTheme?:OfficeThemeId;
   onboardingComplete?:boolean;
+  factoryByProject?:Record<string,FactoryState>;
+  factorySettingsByProject?:Record<string,FactorySettings>;
+  customCli?:{command:string;args:string[]};
 };
 
 function slug(value:string){
@@ -182,12 +205,19 @@ let settings=readJson<Settings>(settingsFile,{
   scheduledAudits:[],
   skillPolicyByProject:{},
   retention:{reportsDays:30,auditDays:90,worktreeDays:7},
-  officeTheme:"classic-cc0"
+  officeTheme:"classic-cc0",
+  factoryByProject:{},
+  factorySettingsByProject:{},
+  customCli:{command:"",args:["{prompt}"]}
 });
 settings.skillPolicyByProject=settings.skillPolicyByProject||{};
 settings.retention=settings.retention||{reportsDays:30,auditDays:90,worktreeDays:7};
 settings.officeTheme=settings.officeTheme||"classic-cc0";
 settings.scheduledAudits=settings.scheduledAudits||[];
+settings.factoryByProject=settings.factoryByProject||{};
+settings.factorySettingsByProject=settings.factorySettingsByProject||{};
+settings.customCli=settings.customCli||{command:"",args:["{prompt}"]};
+if(settings.customCli.command)process.env.OFFICE_CUSTOM_EXECUTABLE=settings.customCli.command;
 if(settings.onboardingComplete==null&&projects.length>0)settings.onboardingComplete=true;
 const legacyAgentNames=settings.agentNames||{};
 settings.agentNamesByProject=settings.agentNamesByProject||{};
@@ -278,23 +308,21 @@ function versionOf(exe:string, provider:ActiveProvider):string|null{
 }
 
 function whereExecutable(name:string):string|null{
-  try{
-    const cmd=process.platform==="win32"?"where.exe":"which";
-    const r=spawnSync(cmd,[name],{encoding:"utf8",windowsHide:true,timeout:3000});
-    if(r.status===0)return r.stdout.split(/\r?\n/).find(Boolean)?.trim()||null;
-  }catch{}
-  return null;
+  return preferWindowsCli(collectWhereHits(name));
 }
 
 function findCursor():string|null{
   const candidates:string[]=[];
   if(process.platform==="win32"){
-    if(process.env.LOCALAPPDATA)candidates.push(path.join(process.env.LOCALAPPDATA,"cursor-agent","agent.cmd"));
-    if(process.env.USERPROFILE)candidates.push(path.join(process.env.USERPROFILE,"AppData","Local","cursor-agent","agent.cmd"));
+    const local=process.env.LOCALAPPDATA||path.join(process.env.USERPROFILE||"", "AppData", "Local");
+    candidates.push(path.join(local,"cursor-agent","agent.cmd"));
+    candidates.push(path.join(local,"cursor-agent","cursor-agent.cmd"));
   }
   const found=whereExecutable("agent");
-  if(found)candidates.unshift(found);
-  return candidates.find(p=>fs.existsSync(p))||null;
+  if(found&&keepResolvedExecutable("cursor",found))candidates.push(found);
+  const dedicated=candidates.filter(file=>/cursor-agent/i.test(file)&&fs.existsSync(file));
+  if(dedicated.length)return preferWindowsCli(dedicated);
+  return candidates.find(file=>fs.existsSync(file)&&keepResolvedExecutable("cursor",file))||null;
 }
 
 function findClaude():string|null{
@@ -307,8 +335,49 @@ function findClaude():string|null{
   return candidates.find(p=>fs.existsSync(p))||null;
 }
 
+function findProviderExe(provider:ActiveProvider):string|null{
+  if(provider==="cursor")return findCursor();
+  if(provider==="claude")return findClaude();
+  if(provider==="custom"){
+    const command=settings.customCli?.command||process.env.OFFICE_CUSTOM_EXECUTABLE||"";
+    if(command&&fs.existsSync(command))return command;
+    return command?whereExecutable(command):null;
+  }
+  try{
+    return providerEngine.resolver.resolveExecutable(provider);
+  }catch{
+    return whereExecutable(provider);
+  }
+}
+
+function grokSessionReady(){
+  if(String(process.env.XAI_API_KEY||"").trim())return true;
+  const home=os.homedir();
+  const hints=[
+    path.join(home,".grok","credentials.json"),
+    path.join(home,".grok","auth.json"),
+    path.join(home,".grok","credentials.toml"),
+    path.join(home,".config","grok","credentials.json")
+  ];
+  if(hints.some(file=>fs.existsSync(file)))return true;
+  try{
+    const cfg=fs.readFileSync(path.join(home,".grok","config.toml"),"utf8");
+    return /(?:^|\n)\s*(?:api[_-]?key|access[_-]?token)\s*=\s*["']?[^"'\s#]+/i.test(cfg);
+  }catch{
+    return false;
+  }
+}
+
 function providerSnapshot(provider:ActiveProvider){
-  const exe=provider==="cursor"?findCursor():findClaude();
+  const exe=findProviderExe(provider);
+  if(provider==="grok"&&exe&&!grokSessionReady()){
+    return {
+      available:false,
+      executable:exe,
+      version:versionOf(exe,provider),
+      message:"grok CLI found but not signed in",
+    };
+  }
   return {
     available:!!exe,
     executable:exe,
@@ -318,33 +387,33 @@ function providerSnapshot(provider:ActiveProvider){
 }
 
 type ProviderSnapshot=ReturnType<typeof providerSnapshot>;
-let providerCache:{cursor:ProviderSnapshot;claude:ProviderSnapshot;at:number}|null=null;
+let providerCache:{at:number;rows:Partial<Record<ActiveProvider,ProviderSnapshot>>}|null=null;
 const PROVIDER_CACHE_MS=30_000;
 
 function cachedProviders(){
-  if(providerCache&&Date.now()-providerCache.at<PROVIDER_CACHE_MS)return providerCache;
-  const cursor=providerSnapshot("cursor");
-  const claude=providerSnapshot("claude");
-  providerCache={cursor,claude,at:Date.now()};
-  return providerCache;
+  if(providerCache&&Date.now()-providerCache.at<PROVIDER_CACHE_MS)return providerCache.rows;
+  const rows={} as Partial<Record<ActiveProvider,ProviderSnapshot>>;
+  for(const id of QUEUE_PROVIDERS)rows[id]=providerSnapshot(id);
+  providerCache={at:Date.now(),rows};
+  return rows;
 }
 
 function resolveProvider(project:Project):ActiveProvider|null{
-  const {cursor,claude}=cachedProviders();
+  const rows=cachedProviders();
   const wanted=project.provider||settings.defaultProvider||"auto";
-  if(wanted==="cursor")return cursor.available?"cursor":null;
-  if(wanted==="claude")return claude.available?"claude":null;
-  if(cursor.available)return "cursor";
-  if(claude.available)return "claude";
+  if(wanted!=="auto")return rows[wanted as ActiveProvider]?.available?wanted as ActiveProvider:null;
+  for(const id of QUEUE_PROVIDERS){
+    if(rows[id]?.available)return id;
+  }
   return null;
 }
 
 function runnerStatus(projectId?:string){
-  const {cursor,claude}=cachedProviders();
+  const rows=cachedProviders();
   const project=projects.find(p=>p.id===projectId);
   const selectedProvider=(project?.provider||settings.defaultProvider||"auto") as Provider;
   return {
-    available:cursor.available||claude.available,
+    available:Object.values(rows).some(x=>x?.available),
     selectedProvider,
     activeProvider,
     runningCommandId,
@@ -355,7 +424,7 @@ function runnerStatus(projectId?:string){
         lane,commandId,provider:activeItemProviders.get(commandId)||null
       }))
     },
-    providers:{cursor,claude}
+    providers:rows
   };
 }
 
@@ -367,27 +436,58 @@ function auditLog(projectId:string|null,actor:string,action:string,subject:strin
 function readAuditTrail(limit=250){try{return fs.readFileSync(auditFile,"utf8").split(/\r?\n/).filter(Boolean).slice(-limit).reverse().map(line=>JSON.parse(line));}catch{return [];}}
 function pushAuditTrail(){broadcast({type:"audit_trail",data:readAuditTrail()});}
 function contractDirectory(project:Project){const dir=path.join(project.path,".ai-kit","office-subtask-contracts");fs.mkdirSync(dir,{recursive:true});return dir;}
-function extractPlanPaths(plan:string){
-  const rx=/([A-Za-z0-9_.@/-]+\.(?:ts|tsx|js|jsx|php|json|md|sql|yml|yaml|css|scss|vue|py|go|rs))/gim,out=new Set<string>();let m:RegExpExecArray|null;
-  while((m=rx.exec(plan)))out.add(m[1].replace(/\\/g,"/").replace(/^\.?\//,""));
-  return [...out].filter(x=>!x.startsWith("node_modules/")).slice(0,40);
+function attachCurrentWorkItem(item:CommandHistory,project:Project){
+  const command=String(item.command||"").trim().toLowerCase();
+  if(item.workItemId)return;
+  if(command!=="continue"&&command!=="fix next")return;
+  const bound=currentTaskWorkItem(project.path);
+  if(!bound)return;
+  item.workItemId=bound.workItemId;
+  if(bound.workItemTitle)item.workItemTitle=bound.workItemTitle;
 }
+
+function markPendingReauditVerified(projectId:string){
+  let n=0;
+  for(const c of commandHistory){
+    if(c.projectId!==projectId||c.status!=="completed"||c.qualityGateStatus!=="pending_reaudit")continue;
+    c.qualityGateStatus="verified";
+    n++;
+  }
+  return n;
+}
+
 function buildSubtaskContract(item:CommandHistory,project:Project){
   let plan="";try{if(item.planPath)plan=fs.readFileSync(path.join(project.path,item.planPath),"utf8");}catch{}
-  const owned=extractPlanPaths(plan);
+  const owned=extractPlanPaths(plan,{root:project.path});
+  const allowed=withImplementationAllowedFiles(owned);
   const acceptance=plan.split(/\r?\n/).map(x=>x.trim()).filter(x=>/accept|test|verify|validation|must|should/i.test(x)).slice(0,12);
   const contract={version:1,projectId:project.id,commandId:item.id,taskId:item.workItemId||item.findingId||item.command,
-    role:item.leadRole||item.assignedRole||"appropriate specialist",executionMode:item.executionMode||"solo",allowedFiles:owned,
-    forbiddenFiles:[".git/**","node_modules/**",".env*","vendor/**"],acceptance:acceptance.length?acceptance:["Follow approved plan and pass its listed validation."],
+    role:item.leadRole||item.assignedRole||"appropriate specialist",executionMode:item.executionMode||"solo",allowedFiles:allowed,
+    forbiddenFiles:[".git/**","node_modules/**",".env*","vendor/**",".ai-kit/**","ai-kit/**"],acceptance:acceptance.length?acceptance:["Follow approved plan and pass its listed validation."],
     dependencies:item.dependencyIds||[],deliverables:["implementation","relevant validation/tests","evidence-backed state update"],generatedAt:new Date().toISOString()};
   const file=path.join(contractDirectory(project),`${item.id}.json`);fs.writeFileSync(file,JSON.stringify(contract,null,2));
-  item.subtaskContractPath=path.relative(project.path,file).replace(/\\/g,"/");item.ownedFiles=owned;item.ownershipStatus=owned.length?"ready":"not_required";return contract;
+  item.subtaskContractPath=path.relative(project.path,file).replace(/\\/g,"/");item.ownedFiles=owned;item.ownershipStatus=owned.length?"ready":"not_required";
+  const taskId=String(item.workItemId||item.findingId||item.id);
+  const agentId=roleToAgentId(item.leadRole||item.assignedRole||"specialist");
+  const claim=claimLease(project.path,{taskId,agentId,files:leaseTargets(taskId,owned),note:item.workItemTitle||item.command});
+  if(!claim.ok){
+    item.ownershipStatus="conflict";
+    item.ownershipConflicts=claim.conflicts.map(x=>`${x.agentId}:${x.taskId}`);
+  }
+  return contract;
 }
 function readSubtaskContract(item:CommandHistory,project:Project){if(!item.subtaskContractPath)return null;try{return JSON.parse(fs.readFileSync(path.join(project.path,item.subtaskContractPath),"utf8"));}catch{return null;}}
 function pathOwned(allowed:string[],file:string){if(!allowed.length)return true;const f=file.replace(/\\/g,"/");return allowed.some(rule=>{const r=rule.replace(/\\/g,"/");return r.endsWith("/**")?f.startsWith(r.slice(0,-3)):f===r;});}
 function enforceContractFiles(item:CommandHistory,project:Project,files:string[]){
   const contract=readSubtaskContract(item,project);if(!contract||!Array.isArray(contract.allowedFiles)||!contract.allowedFiles.length)return {ok:true,violations:[] as string[]};
-  const violations=files.filter(file=>!pathOwned(contract.allowedFiles,file));return {ok:violations.length===0,violations};
+  const violations=files.filter(file=>{
+    const normalized=file.replace(/\\/g,"/");
+    if(isFactoryKitPath(normalized))return false;
+    if(isProductSourcePath(normalized))return false;
+    if(/(^|\/)\.ai-kit\/office-prompts\//i.test(normalized))return false;
+    return !pathOwned(contract.allowedFiles,file);
+  });
+  return {ok:violations.length===0,violations};
 }
 function ownershipConflicts(item:CommandHistory){
   const mine=item.ownedFiles||[];if(!mine.length)return [] as string[];const conflicts:string[]=[];
@@ -644,7 +744,8 @@ function installerSnapshot(){
   return {
     prerequisites:prerequisiteDetectorV2.check(),
     version:versionDetectorV2.current(process.cwd()),
-    runtime:desktopRuntimeInfo()
+    runtime:desktopRuntimeInfo(),
+    codesign:codesignStatus()
   };
 }
 function distributedSnapshot(projectId:string){
@@ -661,14 +762,23 @@ function integrationV2Snapshot(projectId:string){
 }
 function memoryV2Snapshot(projectId:string){
   const p=officeProject(projectId);
-  return {records:memoryV2.store.list(p.path)};
+  return {records:memoryV2.store.list(p.path),graph:graphSnapshot(p.path)};
 }
 const DEFAULT_PERMISSION_POLICY={
   network:"ask",providerExecution:"allow",terminalWrite:"ask",terminalTerminate:"ask",filesystemWrite:"ask"
 } as const;
+function permissionPolicyFor(project:Project){
+  const factoryOn=factoryStateFor(project.id).status==="running";
+  const trusted=!!project.runnerTrusted;
+  return {
+    ...DEFAULT_PERMISSION_POLICY,
+    terminalWrite:(trusted||factoryOn)?"allow":"ask",
+    filesystemWrite:trusted?"allow":"ask"
+  } as const;
+}
 function safetyV2Snapshot(projectId:string){
   const p=officeProject(projectId);
-  return {approvals:approvalStore.list(p.path),profile:getSandboxProfile("guarded"),permissionPolicy:DEFAULT_PERMISSION_POLICY};
+  return {approvals:approvalStore.list(p.path),profile:getSandboxProfile("guarded"),permissionPolicy:permissionPolicyFor(p)};
 }
 function integrationSnapshot(projectId:string){
   const p=officeProject(projectId);
@@ -772,7 +882,7 @@ function refreshProviderHealth(){
 }
 
 function providerRoute(task:string,role:string|null,preferred:string|null,localOnly:boolean){
-  const preferredId=(preferred&&["cursor","claude","codex","gemini","opencode","local"].includes(preferred))
+  const preferredId=(preferred&&QUEUE_PROVIDERS.includes(preferred as ProviderId))
     ?preferred as ProviderId:null;
   return providerEngine.route({task,role,preferred:preferredId,localOnly});
 }
@@ -871,6 +981,328 @@ function collaborationMessage(projectId:string,fromAgentId:string,toAgentId:stri
   return row;
 }
 
+function factorySettingsFor(projectId:string):FactorySettings{
+  settings.factorySettingsByProject=settings.factorySettingsByProject||{};
+  settings.factorySettingsByProject[projectId]=settings.factorySettingsByProject[projectId]||{...DEFAULT_FACTORY_SETTINGS,ceilings:{...DEFAULT_FACTORY_SETTINGS.ceilings}};
+  const row=settings.factorySettingsByProject[projectId];
+  if(row.groupTemplateId===undefined)row.groupTemplateId=DEFAULT_FACTORY_SETTINGS.groupTemplateId;
+  row.ceilings=row.ceilings||{...DEFAULT_FACTORY_SETTINGS.ceilings};
+  if(row.ceilings.maxRuntimeMinutes===90)row.ceilings.maxRuntimeMinutes=DEFAULT_FACTORY_SETTINGS.ceilings.maxRuntimeMinutes;
+  if(row.ceilings.maxConsecutiveFailures===3)row.ceilings.maxConsecutiveFailures=DEFAULT_FACTORY_SETTINGS.ceilings.maxConsecutiveFailures;
+  return row;
+}
+
+function factoryStateFor(projectId:string):FactoryState{
+  settings.factoryByProject=settings.factoryByProject||{};
+  const hiveEnabled=factorySettingsFor(projectId).hiveEnabled;
+  if(!settings.factoryByProject[projectId])settings.factoryByProject[projectId]=emptyFactoryState(projectId,hiveEnabled);
+  settings.factoryByProject[projectId].hiveEnabled=hiveEnabled;
+  return settings.factoryByProject[projectId];
+}
+
+function factorySnapshot(projectId:string){
+  return {
+    projectId,
+    state:factoryStateFor(projectId),
+    settings:factorySettingsFor(projectId),
+    customCli:settings.customCli||{command:"",args:["{prompt}"]}
+  };
+}
+
+function pushFactory(projectId:string){
+  saveJson(settingsFile,settings);
+  broadcast({type:"factory_status",data:factorySnapshot(projectId)});
+}
+
+function ensureOfficeMcp(project:Project){
+  const existing=mcpManager.list(project.path).find(row=>row.id==="office-ask");
+  if(existing)return existing;
+  return mcpManager.upsert(project.path, officeMcpConfig(process.cwd(), project.path));
+}
+
+function coordinationSnapshot(projectId:string){
+  const p=officeProject(projectId);
+  const mcp=ensureOfficeMcp(p);
+  return {
+    projectId,
+    leases:listLeases(p.path),
+    receipts:listReceipts(p.path),
+    mcp,
+    templates:listGroupTemplates(p.path),
+    tools:toolTreeSnapshot(p.path)
+  };
+}
+
+function traceTool(project:Project, input:Parameters<typeof appendToolEvent>[1]){
+  const row=appendToolEvent(project.path, input);
+  return row;
+}
+
+function pushCoordination(projectId:string){
+  broadcast({type:"coordination_snapshot",data:coordinationSnapshot(projectId)});
+}
+
+function independentVerify(project:Project,item:CommandHistory,title:string){
+  const implementer=roleToAgentId(item.assignedRole||item.leadRole||"specialist");
+  const itemId=String(item.workItemId||item.findingId||item.id);
+  if(process.env.OFFICE_SKIP_INDEPENDENT_VERIFY==="1"){
+    return writeReceipt(project.path,{
+      itemId,implementer,verifier:"qa",ok:true,command:"skipped",exitCode:0,
+      evidence:"Independent verify skipped by OFFICE_SKIP_INDEPENDENT_VERIFY.",
+      createdAt:new Date().toISOString()
+    });
+  }
+  const current=item.provider||resolveProvider(project);
+  const other=QUEUE_PROVIDERS.find(id=>id!==current&&cachedProviders()[id]?.available)||null;
+  const exe=other?findProviderExe(other):null;
+  if(!other||!exe){
+    return writeReceipt(project.path,{
+      itemId,implementer,verifier:implementer,ok:false,command:"none",exitCode:null,
+      evidence:"No independent CLI available for verify.",
+      createdAt:new Date().toISOString()
+    });
+  }
+  const asked=askCli({
+    provider:other,
+    executable:exe,
+    projectPath:project.path,
+    prompt:`Verify ${title}. Item ${itemId}. Do not edit.`,
+    timeoutMs:45000
+  });
+  return writeReceipt(project.path,{
+    itemId,implementer,verifier:"qa",ok:asked.ok,command:`${other} consult`,
+    exitCode:asked.exitCode,evidence:(asked.output||asked.error||"empty").slice(0,1200),
+    createdAt:new Date().toISOString()
+  });
+}
+
+function ensureFactoryPty(project:Project, role:string){
+  if(!project.runnerTrusted)return null;
+  const agentId=roleToAgentId(role);
+  const live=runtimeProcesses.list(project.id).find(s=>roleToAgentId(s.agentId||s.role)===agentId&&s.status==="running");
+  if(live)return live;
+  try{
+    return spawnRuntimeAgent(project.id, project.provider||"auto", agentId, role, null, `Hive desk for ${role}`);
+  }catch{
+    return null;
+  }
+}
+
+function expertHive(project:Project,fromRole:string,toRole:string,subject:string,body:string,taskId?:string|null){
+  if(!factoryStateFor(project.id).hiveEnabled)return null;
+  const row=hiveHandshake(collaboration.store,{
+    projectId:project.id,
+    projectPath:project.path,
+    fromAgentId:fromRole,
+    toAgentId:toRole,
+    subject,
+    body,
+    relatedTaskId:taskId||null
+  });
+  if(!row)return null;
+  rememberHandoff(project.path, fromRole, toRole, taskId||null, subject, body);
+  traceTool(project,{
+    parentId:null,itemId:String(taskId||row.id),agentId:roleToAgentId(fromRole),
+    kind:"hive",name:`${fromRole} → ${toRole}`,status:"ok",detail:subject
+  });
+  ensureFactoryPty(project, toRole);
+  const payload=formatHivePtyMessage(fromRole,toRole,subject,body);
+  hivePtyRelay((sessionId,data)=>runtimeProcesses.write(sessionId,data), runtimeProcesses.list(project.id), toRole, payload);
+  emitProjectEvent(project,roleToAgentId(fromRole),fromRole,"handoff","reading",subject,body);
+  pushCollaboration(project.id);
+  broadcast({type:"collaboration_message",data:row});
+  return row;
+}
+
+function hivePromptFor(item:CommandHistory){
+  const project=projects.find(p=>p.id===item.projectId);
+  if(!project||!factoryStateFor(project.id).hiveEnabled)return "";
+  const roles=[item.assignedRole,item.leadRole,...(item.collaboratorRoles||[])].filter(Boolean).map(x=>roleToAgentId(String(x)));
+  const ctx=hiveContext(collaboration.store.snapshot(project.id,project.path).messages,roles);
+  const palace=palaceContext(project.path, roles);
+  const parts=[
+    ctx?`HIVE MAILBOX (experts talk directly; do not wait for the user or for CEO to reply):\n${ctx}`:"",
+    palace?`MEMORY PALACE (cross-session graph):\n${palace}`:""
+  ].filter(Boolean);
+  return parts.join("\n\n");
+}
+
+function syncQueueLivingProgress(project:Project,item:CommandHistory,ok:boolean,output=""){
+  const title=item.workItemTitle||item.findingTitle||item.command;
+  if(!title)return;
+  const blob=[item.message,item.driftSummary,output].filter(Boolean).join("\n");
+  writeLivingProgressFile(path.join(project.path,"PROGRESS.md"),{
+    title,
+    ok,
+    summary:(item.message||"").replace(/\s+/g," ").trim().slice(0,420),
+    evidence:item.taskReportPath||item.id,
+    testFailures:extractTestFailures(blob),
+    role:item.assignedRole||item.leadRole
+  });
+}
+
+function afterQueueItem(item:CommandHistory,ok:boolean,output=""){
+  const project=projects.find(p=>p.id===item.projectId);
+  if(!project)return;
+  const state=factoryStateFor(project.id);
+  const agentId=roleToAgentId(item.assignedRole||item.leadRole||"specialist");
+  const usage=resolveCliUsage(output||item.message||"", estimateTokensFromText(output||item.message||""), estimateCostUsd(estimateTokensFromText(output||item.message||"")));
+  const tokens=usage.tokens;
+  const costUsd=usage.costUsd??0;
+  const runtimeMinutes=factoryElapsedMinutes(state);
+  try{safety.breaker.recordUsage(item.id,{projectId:project.id,agentId},tokens,costUsd);}catch{}
+  if(shouldApplySessionBudget(state)){
+    applyFactoryBudget(state,{agentId,tokens,costUsd,runtimeMinutes},factorySettingsFor(project.id).ceilings);
+  }
+  if(ok&&isNonShippingExecutorResult(`${item.message||""}\n${output||""}`)){
+    ok=false;
+    item.status="failed";
+    item.qualityGateStatus="failed";
+    item.message=`Did not ship product files for ${item.workItemTitle||item.command}. Planning-only closeout is not completion.`.slice(0,420);
+  }
+  recordFactoryResult(
+    state,
+    item.workItemId||item.findingId||item.id,
+    ok,
+    [item.message,item.driftSummary,output].filter(Boolean).join("\n")||(ok?"completed":"failed"),
+    {verifierStatus:item.verifierStatus}
+  );
+  const itemId=String(item.workItemId||item.findingId||item.id);
+  releaseLease(project.path,agentId,itemId);
+  if(ok&&(item.workItemTitle||item.findingTitle)){
+    const title=item.workItemTitle||item.findingTitle||item.command;
+    const lead=item.leadRole||item.assignedRole||"Backend";
+    expertHive(project,lead,"QA",`Ready to verify ${itemId}`,`${title} is implemented. Verify from repository evidence.`,itemId);
+    let receipt=receiptFor(project.path,itemId);
+    if(!evaluateReceipt(receipt,agentId).ok&&item.verifierStatus==="passed"){
+      receipt=writeReceipt(project.path,{
+        itemId,implementer:agentId,verifier:"qa",ok:true,
+        command:"queue-verifier",exitCode:0,
+        evidence:item.message||"Queue verifier passed.",
+        createdAt:new Date().toISOString()
+      });
+    }
+    if(!evaluateReceipt(receipt,agentId).ok)receipt=independentVerify(project,item,title);
+    const judged=evaluateReceipt(receipt,agentId);
+    item.verifierStatus=judged.ok?"passed":"failed";
+    if(judged.ok){
+      syncQueueLivingProgress(project,item,true,output);
+      const roadmap=path.join(project.path,"docs","ROADMAP.md");
+      if(fs.existsSync(roadmap))writeProgressFile(roadmap,title,item.taskReportPath||item.id);
+      commitFactoryKit(project.path,`office-factory: record ${itemId}`);
+      expertHive(project,"QA",lead,`Verified ${itemId}`,receipt?.evidence||"Acceptance holds.",itemId);
+      traceTool(project,{itemId,agentId:"qa",kind:"verify",name:"independent verify",status:"ok",detail:receipt?.evidence||title});
+    }else{
+      syncQueueLivingProgress(project,item,false,`${output}\n${judged.reason||""}`);
+      traceTool(project,{itemId,agentId:"qa",kind:"verify",name:"independent verify",status:"failed",detail:judged.reason||item.message||""});
+      item.status="verifying";
+      item.message=judged.reason||"Independent verify receipt required.";
+    }
+  }else if(!ok){
+    syncQueueLivingProgress(project,item,false,output);
+  }
+  saveJson(historyFile,commandHistory);
+  pushHistory();
+  pushCoordination(project.id);
+  if(state.status==="running")tickFactory(project.id);
+  else pushFactory(project.id);
+}
+
+function startFactory(projectId:string){
+  const project=projects.find(p=>p.id===projectId);
+  if(!project)throw new Error("Project not found.");
+  const state=factoryStateFor(projectId);
+  const conflicts=canonicalConflictFiles(project.path);
+  if(conflicts.length){
+    state.status="tripped";
+    state.tripReason=`Unresolved Git conflict markers in ${conflicts.map(x=>path.basename(x)).join(", ")}.`;
+    state.lastMessage=state.tripReason;
+    state.stoppedAt=new Date().toISOString();
+    pushFactory(projectId);
+    return factorySnapshot(projectId);
+  }
+  if(!project.runnerTrusted){
+    state.status="needs_trust";
+    state.lastMessage="Workspace trust required once before the factory can run unattended.";
+    pushFactory(projectId);
+    return factorySnapshot(projectId);
+  }
+  state.status="running";
+  state.startedAt=new Date().toISOString();
+  state.stoppedAt=null;
+  state.tripReason=null;
+  state.consecutiveFailures=0;
+  state.queuedIds=[];
+  state.failedIds=[];
+  state.lastMessage="Factory started. Specialists will handshake and finish canonical work.";
+  pushFactory(projectId);
+  tickFactory(projectId);
+  return factorySnapshot(projectId);
+}
+
+function stopFactory(projectId:string){
+  const state=factoryStateFor(projectId);
+  state.status="stopped";
+  state.stoppedAt=new Date().toISOString();
+  state.lastMessage="Factory stopped.";
+  pushFactory(projectId);
+  return factorySnapshot(projectId);
+}
+
+function tickFactory(projectId:string){
+  const project=projects.find(p=>p.id===projectId);
+  if(!project)return;
+  const state=factoryStateFor(projectId);
+  if(state.status!=="running"){pushFactory(projectId);return;}
+  if(!project.runnerTrusted){
+    state.status="needs_trust";
+    state.lastMessage="Workspace trust required once before the factory can run unattended.";
+    pushFactory(projectId);
+    return;
+  }
+  const workbench=readWorkbench(project);
+  const items=Array.isArray(workbench?.workItems)?workbench.workItems:[];
+  const history=commandHistory.filter(x=>x.projectId===projectId);
+  const inflight=history.filter(x=>["queued","waiting_for_agent","planning","plan_ready","running","verifying"].includes(x.status)).length;
+  const slots=Math.max(0,factorySettingsFor(projectId).maxConcurrent-inflight);
+  const picked=pickNextFactoryItems(items,history,slots,state.failedIds);
+  for(const item of picked){
+    const lead=String(item.assignedRole||"Backend");
+    const claim=claimLease(project.path,{
+      taskId:item.id,
+      agentId:roleToAgentId(lead),
+      files:[`task:${item.id}`],
+      note:item.title
+    });
+    if(!claim.ok){
+      state.lastMessage=`Lease blocked ${item.id}: held by ${claim.conflicts.map(x=>x.agentId).join(", ")||"another agent"}.`;
+      continue;
+    }
+    traceTool(project,{itemId:item.id,agentId:roleToAgentId(lead),kind:"lease",name:"claim",status:"ok",detail:item.title});
+    const templated=applyGroupTemplate(resolveGroupTemplate(project.path, factorySettingsFor(projectId).groupTemplateId),{
+      ...item,
+      assignedRole:lead,
+      leadRole:lead,
+      executionMode:item.executionMode||"collaborative"
+    });
+    queueWorkItem(projectId,{...templated,executionMode:templated.executionMode||"collaborative"});
+    traceTool(project,{itemId:item.id,agentId:roleToAgentId(lead),kind:"task",name:item.title,status:"running",detail:templated.groupTemplateId||"factory"});
+    if(!state.queuedIds.includes(item.id))state.queuedIds.push(item.id);
+    expertHive(project,"CEO",lead,`Assigned ${item.id}`,`Finish this canonical item without waiting for the user: ${item.title}`,item.id);
+    expertHive(project,lead,"QA",`Starting ${item.id}`,`I am taking ${item.title}. Handshake when you can verify.`,item.id);
+  }
+  const live=commandHistory.filter(x=>x.projectId===projectId&&["queued","waiting_for_agent","planning","plan_ready","running","verifying"].includes(x.status));
+  const queuedLive=state.queuedIds.filter(id=>!state.completedIds.includes(id)&&!state.failedIds.includes(id));
+  const liveIds=[...new Set([...live.map(x=>String(x.workItemId||x.findingId||x.id)),...queuedLive])];
+  for(const row of live){
+    renewLease(project.path, roleToAgentId(row.assignedRole||row.leadRole||"specialist"), String(row.workItemId||row.findingId||row.id));
+  }
+  sweepOrphanLeases(project.path, liveIds);
+  pushCoordination(projectId);
+  completeFactoryIfIdle(state,items,history);
+  pushFactory(projectId);
+}
+
 function collaborationBlackboard(projectId:string,authorAgentId:string,category:string,title:string,body:string,relatedTaskId:string|null){
   const p=officeProject(projectId);
   const allowed=new Set(["decision","fact","warning","handoff","note"]);
@@ -912,7 +1344,7 @@ function spawnRuntimeAgent(projectId:string,providerInput:string,agentId:string,
   if(!project.runnerTrusted)throw new Error("Runtime spawn requires a trusted project.");
 
   let provider:ProviderId|null=null;
-  if(["cursor","claude","codex","gemini","opencode","local"].includes(providerInput)){
+  if(QUEUE_PROVIDERS.includes(providerInput as ProviderId)){
     provider=providerInput as ProviderId;
   }else{
     const decision=providerEngine.route({
@@ -947,7 +1379,7 @@ function missionSettingsSnapshot(){
   return {
     scheduledAudits:settings.scheduledAudits||[],
     officeTheme:settings.officeTheme||"classic-cc0",
-    usageTelemetry:{tokenSource:"unavailable",costSource:"unavailable"}
+    usageTelemetry:{tokenSource:"provider-or-estimate",costSource:"provider-or-estimate"}
   };
 }
 function pushMissionSettings(){broadcast({type:"mission_settings",data:missionSettingsSnapshot()});}
@@ -1097,6 +1529,7 @@ function planPromptFor(item:CommandHistory){
   return [
     "You are in PLANNING ONLY mode for AI Development Office.",
     "Do not modify application code, project files, git state, dependencies, or generated files.",
+    "The plan document is for the NEXT implementation turn. Do not title it Planning only. Do not write that this turn does not implement.",
     `Task: ${subject}.`,
     `Assigned role: ${item.assignedRole||"CEO/appropriate specialist"}.`,
     "Inspect the repository and canonical project docs first.",
@@ -1109,8 +1542,10 @@ function planPromptFor(item:CommandHistory){
     "6. Tests / validation",
     "7. Acceptance criteria",
     "8. Rollback / stop conditions",
-    "Do not implement anything. Return only the plan."
-  ].join(" ");
+    "9. PROGRESS.md living updates: In Progress, Next, Bugs / errors, Validation after each role close",
+    "Do not implement anything. Return only the plan.",
+    hivePromptFor(item)
+  ].filter(Boolean).join(" ");
 }
 
 function executionPromptWithPlan(item:CommandHistory,plan:string,collaborationContext=""){
@@ -1124,17 +1559,22 @@ function executionPromptWithPlan(item:CommandHistory,plan:string,collaborationCo
     "Use the AI Development Kit workflow in this project.",
     `Execute exactly this approved Office task: ${subject}.`,
     `Assigned role: ${item.assignedRole||"appropriate specialist"}.`,
+    "THIS is the implementation turn. Create the product files the plan lists.",
+    "Ignore any leftover planning-only / do-not-implement-this-turn language in the plan.",
+    "A zero-diff or docs-only closeout is a failure for this task.",
     "Follow the plan below. Re-inspect evidence if repository state changed.",
     "Do not expand scope beyond the plan unless a blocking contradiction is discovered.",
     "If the plan is unsafe or stale, stop and report instead of improvising.",
     "Run the listed relevant tests/validation before completion.",
+    livingProgressPrompt(),
     "Update canonical state/docs only when evidence supports it.",
     "",
     "APPROVED PLAN:",
     plan,
     "",
     collaborationContext ? "COLLABORATOR PRE-EXECUTION REVIEWS:" : "",
-    collaborationContext
+    collaborationContext,
+    hivePromptFor(item)
   ].filter(Boolean).join("\n");
 }
 
@@ -1152,9 +1592,11 @@ function promptFor(item:CommandHistory){
       "Inspect project docs and actual repository evidence before changing anything.",
       "Do not implement unrelated backlog items.",
       "Run the relevant validation/tests/build for this work item.",
+      livingProgressPrompt(),
       "Update PROGRESS.md / PROJECT_STATE.md / related docs only when evidence supports completion.",
-      "Stop after this one work item."
-    ].join(" ");
+      "Stop after this one work item.",
+      hivePromptFor(item)
+    ].filter(Boolean).join(" ");
   }
   if(item.command==="fix finding"){
     return [
@@ -1162,7 +1604,9 @@ function promptFor(item:CommandHistory){
       `Fix exactly this verified finding: ${item.findingId} ${item.findingTitle}.`,
       `CEO has assigned this task to ${item.assignedRole}.`,
       "Inspect actual code before changing anything. Implement the smallest correct fix.",
-      "Run relevant regression/security tests. Update PROGRESS.md, PROJECT_STATE.md and audit/finding status only after verification.",
+      "Run relevant regression/security tests.",
+      livingProgressPrompt(),
+      "Update PROGRESS.md, PROJECT_STATE.md and audit/finding status only after verification.",
       "Do not automatically move to another finding."
     ].join(" ");
   }
@@ -1174,22 +1618,23 @@ function isMutating(item:CommandHistory){
 }
 
 function spawnRunner(provider:ActiveProvider,exe:string,project:Project,prompt:string,mutating:boolean){
-  // PowerShell wrapper is deliberate: Cursor installs as agent.cmd on native Windows.
-  // Prompt is passed through environment variables, not interpolated into shell source.
-  if(process.platform==="win32"){
-    const script=provider==="cursor"
-      ? `$a=@('-p','--trust','--workspace',$env:OFFICE_PROJECT,'--output-format','text'); if($env:OFFICE_MUTATE -eq '1'){$a+='--force'}; $a+=$env:OFFICE_PROMPT; & $env:OFFICE_EXE @a`
-      : `$a=@('-p','--permission-mode','auto',$env:OFFICE_PROMPT); & $env:OFFICE_EXE @a`;
-    return spawn("powershell.exe",["-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass","-Command",script],{
-      cwd:project.path,windowsHide:true,shell:false,
-      env:{...process.env,OFFICE_EXE:exe,OFFICE_PROJECT:project.path,OFFICE_PROMPT:prompt,OFFICE_MUTATE:mutating?"1":"0"}
-    });
-  }
-
-  const args=provider==="cursor"
-    ? ["-p","--trust","--workspace",project.path,"--output-format","text",...(mutating?["--force"]:[]),prompt]
-    : ["-p","--permission-mode","auto",prompt];
-  return spawn(exe,args,{cwd:project.path,shell:false,env:{...process.env}});
+  const launch=buildCliLaunch({
+    provider,
+    executable:exe,
+    projectPath:project.path,
+    prompt,
+    mutating,
+    trusted:!!project.runnerTrusted,
+    customArgs:settings.customCli?.args
+  });
+  const wrapped=wrapWindowsCli(launch.command,launch.args);
+  return spawn(wrapped.command,wrapped.args,{
+    cwd:project.path,
+    windowsHide:true,
+    shell:false,
+    env:spawnEnv(launch.env),
+    stdio:["ignore","pipe","pipe"]
+  });
 }
 
 
@@ -1215,10 +1660,18 @@ async function createPlan(item:CommandHistory,project:Project,provider:ActivePro
 
   return await new Promise<boolean>((resolve)=>{
     const prompt=planPromptFor(item);
-    const child=spawnRunner(provider,exe,project,prompt,false);
     let output="",err="";
-    child.stdout?.on("data",d=>{output+=d.toString();if(output.length>30000)output=output.slice(-30000);});
-    child.stderr?.on("data",d=>{err+=d.toString();if(err.length>10000)err=err.slice(-10000);});
+    let shortRetry=false;
+    const attach=(child:ReturnType<typeof spawnRunner>)=>{
+      child.stdout?.on("data",d=>{output+=d.toString();if(output.length>30000)output=output.slice(-30000);});
+      child.stderr?.on("data",d=>{err+=d.toString();if(err.length>10000)err=err.slice(-10000);});
+      child.on("error",e=>finish(false,e.message));
+      child.on("close",code=>{
+        const ok=code===0;
+        const msg=(ok?output:(err||output)).trim().replace(/\s+/g," ");
+        finish(ok,msg||`${provider} planning exited ${code}`);
+      });
+    };
 
     const finish=(ok:boolean,message:string)=>{
       if(!ok){
@@ -1231,7 +1684,15 @@ async function createPlan(item:CommandHistory,project:Project,provider:ActivePro
       }
 
       const plan=output.trim();
-      if(plan.length<120){
+      if(shouldRetryShortPlan(plan.length, shortRetry)){
+        shortRetry=true;
+        output="";err="";
+        item.message="Planning output too short; retrying once";
+        saveJson(historyFile,commandHistory);pushHistory();
+        attach(spawnRunner(provider,exe,project,prompt,false));
+        return;
+      }
+      if(plan.length<MIN_PLAN_CHARS){
         item.status="failed";
         item.message="Planning failed: returned plan was too short to execute safely.";
         item.completedAt=new Date().toISOString();
@@ -1241,7 +1702,7 @@ async function createPlan(item:CommandHistory,project:Project,provider:ActivePro
       }
 
       const file=planFileFor(project,item);
-      fs.writeFileSync(file,plan+"\n","utf8");
+      fs.writeFileSync(file,stampImplementationPlan(plan),"utf8");
       item.planPath=path.relative(project.path,file).replace(/\\/g,"/");
       item.planSummary=summarizePlan(plan);
       item.plannedAt=new Date().toISOString();
@@ -1258,15 +1719,14 @@ async function createPlan(item:CommandHistory,project:Project,provider:ActivePro
         `CTO reviewed technical plan for ${item.findingId||item.workItemId||item.command}`);
       emitProjectEvent(project,"ceo","CEO","validation","reviewing",item.command,
         `CEO accepted CTO-reviewed plan and released task for execution`);
+      if(item.assignedRole){
+        expertHive(project,"Architect",item.assignedRole,`Plan ready for ${item.workItemId||item.command}`,item.planSummary||"Implementation plan is ready. Execute without waiting for the user.",item.workItemId);
+        expertHive(project,item.assignedRole,"QA",`Plan shared for ${item.workItemId||item.command}`,"I have the plan. I will implement; you verify after.",item.workItemId);
+      }
       resolve(true);
     };
 
-    child.on("error",e=>finish(false,e.message));
-    child.on("close",code=>{
-      const ok=code===0;
-      const msg=(ok?output:(err||output)).trim().replace(/\s+/g," ");
-      finish(ok,msg||`${provider} planning exited ${code}`);
-    });
+    attach(spawnRunner(provider,exe,project,prompt,false));
   });
 }
 
@@ -1285,10 +1745,13 @@ function verifierPrompt(item:CommandHistory,plan:string,result:string){
     `Collaborators: ${(item.collaboratorRoles||[]).join(", ")||"none"}.`,
     "Inspect the CURRENT repository state and relevant tests/evidence independently.",
     "Compare the actual repository result against the approved plan.",
+    "If the plan requires product files (app/database/tests/resources) and they are still absent, VERDICT: FAIL even when git is clean.",
+    "A planning-only or no-product-files executor summary is not completion.",
     "Detect scope drift, unplanned changes, missing acceptance criteria, regressions, and unsupported completion claims.",
     "Return these exact leading lines:",
     "VERDICT: PASS or VERDICT: FAIL",
     "DRIFT: NO or DRIFT: YES",
+    "If tests fail, quote the failing test names and the fail counts so Office can write them into PROGRESS.md Bugs / errors.",
     "Then provide concise evidence and reasons.",
     "",
     "APPROVED PLAN:",
@@ -1298,11 +1761,32 @@ function verifierPrompt(item:CommandHistory,plan:string,result:string){
     result.slice(0,5000)
   ].join("\n");
 }
+function unwrapVerifierText(text:string){
+  const raw=String(text||"").trim();
+  try{
+    const parsed=JSON.parse(raw);
+    if(parsed&&typeof parsed.result==="string"&&parsed.result.trim())return parsed.result;
+  }catch{}
+  return raw;
+}
 function parseVerifier(text:string){
-  const verdict=/VERDICT:\s*PASS/i.test(text)?"passed":/VERDICT:\s*FAIL/i.test(text)?"failed":"error";
-  const drift=/DRIFT:\s*YES/i.test(text)?"detected":/DRIFT:\s*NO/i.test(text)?"clean":"not_checked";
+  const body=unwrapVerifierText(text);
+  const verdict=/VERDICT:\s*PASS/i.test(body)?"passed":/VERDICT:\s*FAIL/i.test(body)?"failed":"error";
+  const drift=/DRIFT:\s*YES/i.test(body)?"detected":/DRIFT:\s*NO/i.test(body)?"clean":"not_checked";
   return {verdict,drift};
 }
+function docsAlreadyMarkComplete(project:Project, title:string){
+  const needle=String(title||"").trim();
+  if(!needle)return false;
+  for(const rel of ["PROGRESS.md","docs/ROADMAP.md"]){
+    try{
+      const text=fs.readFileSync(path.join(project.path,rel),"utf8");
+      if(parseProgressItems(text).some(x=>x.done&&titlesMatch(x.title,needle)))return true;
+    }catch{}
+  }
+  return false;
+}
+
 async function runIndependentVerifier(item:CommandHistory,project:Project,executorProvider:ActiveProvider,resultText:string){
   item.verifierStatus="pending";item.driftStatus="not_checked";
   saveJson(historyFile,commandHistory);pushHistory();
@@ -1313,6 +1797,8 @@ async function runIndependentVerifier(item:CommandHistory,project:Project,execut
   if(executorProvider==="cursor"&&claude)provider="claude";
   else if(executorProvider==="claude"&&cursor)provider="cursor";
   else provider=executorProvider;
+
+  const otherProvider:ActiveProvider|null=provider==="claude"&&cursor?"cursor":provider==="cursor"&&claude?"claude":null;
 
   const exe=provider==="cursor"?cursor:claude;
   if(!provider||!exe){
@@ -1325,32 +1811,41 @@ async function runIndependentVerifier(item:CommandHistory,project:Project,execut
     try{plan=fs.readFileSync(path.join(project.path,item.planPath),"utf8");}catch{}
   }
 
-  emitProjectEvent(project,"verifier","Independent Verifier","validation","reviewing",
-    item.workItemId||item.findingId||item.command,`Independent verification via ${provider}`);
-
-  return await new Promise<boolean>(resolve=>{
-    const child=spawnRunner(provider,exe,project,verifierPrompt(item,plan,resultText),false);
+  const runOnce=(chosen:ActiveProvider,chosenExe:string)=>new Promise<{ok:boolean;text:string}>(resolve=>{
+    emitProjectEvent(project,"verifier","Independent Verifier","validation","reviewing",
+      item.workItemId||item.findingId||item.command,`Independent verification via ${chosen}`);
+    const child=spawnRunner(chosen,chosenExe,project,verifierPrompt(item,plan,resultText),false);
     let output="",err="",settled=false;
-    const finish=(ok:boolean)=>{
+    const finish=(ok:boolean,text:string)=>{
       if(settled)return;
       settled=true;
       clearTimeout(timer);
-      resolve(ok);
+      resolve({ok,text});
     };
     const timer=setTimeout(()=>{
       try{child.kill();}catch{}
+      const alreadyDone=docsAlreadyMarkComplete(project,item.workItemTitle||item.findingTitle||"");
+      if(alreadyDone){
+        item.verifierStatus="passed";
+        item.driftStatus="clean";
+        item.driftSummary="Independent verifier timed out; progress already marks this item complete.";
+        emitProjectEvent(project,"verifier","Independent Verifier","validation","done",
+          item.workItemId||item.findingId||item.command,"PASS · already complete in progress docs");
+        finish(true,"PASS · already complete in progress docs");
+        return;
+      }
       item.verifierStatus="error";
       item.driftStatus="not_checked";
       item.driftSummary="Independent verifier timed out.";
       emitProjectEvent(project,"verifier","Independent Verifier","validation","error",
         item.workItemId||item.findingId||item.command,"Verifier timed out");
-      finish(false);
-    },120000);
+      finish(false,"Independent verifier timed out.");
+    },360000);
     child.stdout?.on("data",d=>{output+=d.toString();if(output.length>24000)output=output.slice(-24000);});
     child.stderr?.on("data",d=>{err+=d.toString();if(err.length>8000)err=err.slice(-8000);});
     child.on("error",e=>{
       item.verifierStatus="error";item.driftStatus="not_checked";item.driftSummary=e.message.slice(0,320);
-      finish(false);
+      finish(false,e.message);
     });
     child.on("close",code=>{
       if(settled)return;
@@ -1366,9 +1861,19 @@ async function runIndependentVerifier(item:CommandHistory,project:Project,execut
         parsed.verdict==="passed"&&parsed.drift==="clean"?"done":"blocked",
         item.workItemId||item.findingId||item.command,
         `${parsed.verdict.toUpperCase()} · drift ${parsed.drift}`);
-      finish(code===0&&parsed.verdict==="passed"&&parsed.drift==="clean");
+      finish(code===0&&parsed.verdict==="passed"&&parsed.drift==="clean",text);
     });
   });
+
+  const first=await runOnce(provider,exe);
+  if(first.ok)return true;
+  const otherExe=otherProvider==="cursor"?cursor:otherProvider==="claude"?claude:null;
+  if(otherProvider&&otherExe&&isProviderAuthFailure(first.text||item.driftSummary||"")){
+    item.driftSummary=`${provider} verifier auth failed; retrying via ${otherProvider}.`;
+    const second=await runOnce(otherProvider,otherExe);
+    return second.ok;
+  }
+  return false;
 }
 
 
@@ -1416,16 +1921,37 @@ function cleanupIsolatedWorktree(project:Project,dir:string,branch:string){
   gitRun(project.path,["worktree","prune"],10000);
   safeRemoveDir(dir);
 }
+function isolateCandidateError(text:string, fallback:string){
+  const raw=String(text||"").trim();
+  try{
+    const parsed=JSON.parse(raw);
+    if(parsed&&typeof parsed.result==="string"&&parsed.result.trim()){
+      return parsed.result.replace(/\s+/g," ").trim().slice(0,220);
+    }
+    if(parsed&&parsed.is_error===false)return fallback;
+  }catch{}
+  return (raw||fallback).replace(/\s+/g," ").trim().slice(0,220);
+}
+
+function isCandidateNoisePath(file:string){
+  const n=file.replace(/\\/g,"/").replace(/^\.\//,"");
+  return /\.log$/i.test(n)
+    || /(^|\/)\.phpunit\.result\.cache$/i.test(n)
+    || n.startsWith("bootstrap/cache/");
+}
+
 function candidatePatch(worktreePath:string){
   // Intent-to-add lets git diff include newly created untracked files without committing/staging content in the main tree.
   gitRun(worktreePath,["add","-N","."],15000);
-  const diff=gitRun(worktreePath,["diff","--binary","HEAD"],30000);
-  const files=gitRun(worktreePath,["diff","--name-only","HEAD"],15000);
-  const stat=gitRun(worktreePath,["diff","--numstat","HEAD"],15000);
+  gitRun(worktreePath,["reset","-q","HEAD","--","*.log",".phpunit.result.cache","bootstrap/cache"],8000);
+  const scoped=["--",".",":(exclude).ai-kit",":(exclude)*.log",":(exclude)**/*.log",":(exclude).phpunit.result.cache",":(exclude)bootstrap/cache"];
+  const diff=gitRun(worktreePath,["diff","--binary","HEAD",...scoped],30000);
+  const files=gitRun(worktreePath,["diff","--name-only","HEAD",...scoped],15000);
+  const stat=gitRun(worktreePath,["diff","--numstat","HEAD",...scoped],15000);
   return {
     ok:diff.ok,
     patch:diff.stdout,
-    files:files.stdout.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),
+    files:files.stdout.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).filter(file=>!isCandidateNoisePath(file)),
     stat:stat.stdout,
     error:diff.stderr
   };
@@ -1441,10 +1967,10 @@ function dirtyMainFiles(project:Project){
   const r=gitRun(project.path,["status","--porcelain"],12000);
   if(!r.ok)return [] as string[];
   return r.stdout.split(/\r?\n/).filter(Boolean).map(line=>{
-    const body=line.slice(3).trim();
+    const body=line.replace(/^../,"").trim();
     const arrow=body.lastIndexOf(" -> ");
     return (arrow>=0?body.slice(arrow+4):body).replace(/^"|"$/g,"");
-  }).filter(Boolean).filter(file=>!isOfficeRuntimePath(file));
+  }).filter(Boolean).filter(file=>!isFactoryKitPath(file)&&!isOfficeRuntimePath(file));
 }
 function mergeArtifactDir(project:Project){
   const dir=path.join(project.path,".ai-kit","office-merges");fs.mkdirSync(dir,{recursive:true});return dir;
@@ -1463,7 +1989,8 @@ function mergeGate(project:Project,item:CommandHistory,label:string,patch:string
     return {ok:false,patchFile:"",error:item.mergeGateSummary};
   }
   const patchFile=path.join(mergeArtifactDir(project),`${item.id}-${slug(label)}.patch`);
-  fs.writeFileSync(patchFile,patch,"utf8");
+  const normalized=patch.endsWith("\n")?patch:`${patch}\n`;
+  fs.writeFileSync(patchFile,normalized,"utf8");
   const check=gitRun(project.path,["apply","--check","--binary",patchFile],30000);
   if(!check.ok){
     item.mergeGateStatus="blocked";item.mergeGateSummary=`git apply --check failed: ${check.stderr||check.stdout}`;
@@ -1479,6 +2006,65 @@ function applyMergePatch(project:Project,item:CommandHistory,patchFile:string){
     return false;
   }
   item.mergeGateStatus="applied";item.mergeGateSummary=`Patch applied to main working tree. ${item.mergeGateSummary||""}`;
+  return true;
+}
+function copyWorktreeFiles(project:Project,worktreePath:string,files:string[]){
+  const copied:string[]=[];
+  for(const file of files){
+    const normalized=file.replace(/\\/g,"/");
+    if(/(^|\/)\.ai-kit\/office-prompts\//i.test(normalized))continue;
+    const from=path.join(worktreePath,file);
+    const to=path.join(project.path,file);
+    if(!fs.existsSync(from)||!fs.statSync(from).isFile())continue;
+    fs.mkdirSync(path.dirname(to),{recursive:true});
+    fs.copyFileSync(from,to);
+    copied.push(normalized);
+  }
+  return copied;
+}
+function mergeCandidateIntoMain(project:Project,item:CommandHistory,candidate:{label:string;patch:string;files:string[];worktreePath:string;branch:string},session:FactoryMergeSession){
+  const gate=mergeGate(project,item,candidate.label,candidate.patch,candidate.files);
+  if(!gate.ok){
+    const copied=candidate.worktreePath?copyWorktreeFiles(project,candidate.worktreePath,candidate.files):[];
+    if(!copied.length)return {ok:false,error:gate.error||"Merge gate blocked"};
+    item.mergeGateStatus="passed";
+    item.mergeGateSummary=`Copied ${copied.length} file(s) from isolated worktree after patch check failed.`;
+    item.mergeMethod=recordMergeMethod(session,"patch");
+    return {ok:true,error:""};
+  }
+  commitWorktree(candidate.worktreePath,`office ${item.id} ${candidate.label}`);
+  const squashed=squashBranch(project.path,candidate.branch);
+  if(squashed.ok){
+    item.mergeMethod=recordMergeMethod(session,"squash");
+    item.mergeGateStatus="applied";
+    item.mergeGateSummary=`Squash-merged ${candidate.branch} (${candidate.files.length} file(s)).`;
+    return {ok:true,error:""};
+  }
+  if(!applyMergePatch(project,item,gate.patchFile))return {ok:false,error:item.mergeGateSummary||"Patch apply failed"};
+  session.patchFiles.push(gate.patchFile);
+  item.mergeMethod=recordMergeMethod(session,"patch");
+  return {ok:true,error:""};
+}
+function closeFactoryMerge(project:Project,item:CommandHistory,session:FactoryMergeSession,ok:boolean,title:string){
+  if(!ok){
+    const aborted=abortFactoryMerge(session);
+    if(!aborted.ok){
+      item.conflictFiles=[...(item.conflictFiles||[]),"ROLLBACK_FAILED"];
+      item.mergeGateSummary=`${item.mergeGateSummary||""} Squash rollback failed: ${aborted.error}`.trim();
+    }
+    return false;
+  }
+  const finished=finishFactoryMerge(session,`office-factory: ${title}`);
+  if(!finished.ok){
+    abortFactoryMerge(session);
+    item.mergeGateStatus="failed";
+    item.mergeGateSummary=`Squash commit failed: ${finished.error}`;
+    return false;
+  }
+  item.mergeMethod=session.method;
+  item.mergeGateStatus="applied";
+  item.mergeGateSummary=`${session.method==="squash"?"Squash-merged":session.method==="patch"?"Patch-applied":"Merged"} and committed ${title}.`;
+  traceTool(project,{itemId:String(item.workItemId||item.findingId||item.id),agentId:roleToAgentId(item.assignedRole||item.leadRole||"specialist"),kind:"merge",name:session.method,status:"ok",detail:item.mergeGateSummary});
   return true;
 }
 function rollbackMergePatch(project:Project,item:CommandHistory,patchFile:string){
@@ -1526,12 +2112,13 @@ function collaboratorPrompt(item:CommandHistory,role:string,plan:string){
   ].join("\n");
 }
 function collaboratorProvider(role:string,leadProvider:ActiveProvider){
-  const cursor=findCursor(),claude=findClaude();
+  const health=cachedProviders();
+  const pool=QUEUE_PROVIDERS.filter(id=>["cursor","claude","grok"].includes(id)&&health[id]?.available)
+    .sort((a,b)=>(a==="claude"?1:0)-(b==="claude"?1:0));
   const seed=role.toLowerCase().split("").reduce((n,ch)=>n+ch.charCodeAt(0),0);
-  if(cursor&&claude)return seed%2===0?"cursor":"claude";
-  if(leadProvider==="cursor"&&cursor)return"cursor";
-  if(leadProvider==="claude"&&claude)return"claude";
-  return cursor?"cursor":claude?"claude":null;
+  if(pool.length)return pool[seed%pool.length];
+  if(health[leadProvider]?.available)return leadProvider;
+  return QUEUE_PROVIDERS.find(id=>health[id]?.available)||null;
 }
 async function runOneCollaboratorReview(item:CommandHistory,project:Project,leadProvider:ActiveProvider,role:string,plan:string,prepared:{path:string;branch:string}){
   item.collaboratorStatus=item.collaboratorStatus||{};
@@ -1540,7 +2127,7 @@ async function runOneCollaboratorReview(item:CommandHistory,project:Project,lead
   saveJson(historyFile,commandHistory);pushHistory();
 
   const provider=collaboratorProvider(role,leadProvider);
-  const exe=provider==="cursor"?findCursor():provider==="claude"?findClaude():null;
+  const exe=provider?findProviderExe(provider):null;
   const subject=item.workItemId||item.findingId||item.command;
   emitProjectEvent(project,normalizeLane(role),role,"handoff","reading",subject,`${role} reviewing approved plan in isolated review worktree`);
 
@@ -1563,7 +2150,7 @@ async function runOneCollaboratorReview(item:CommandHistory,project:Project,lead
     });
     child.on("close",code=>{
       const text=((code===0?output:(err||output))||"").trim();
-      const blocked=/REVIEW:\s*BLOCK/i.test(text)||/BLOCKER:\s*YES/i.test(text)||code!==0;
+      const blocked=/REVIEW:\s*BLOCK/i.test(text)||/BLOCKER:\s*YES/i.test(text);
       const ok=code===0&&!blocked&&(/REVIEW:\s*PASS/i.test(text)||/BLOCKER:\s*NO/i.test(text));
       item.collaboratorStatus![role]=blocked?"blocked":ok?"passed":"error";
       const file=path.join(collaborationDirectory(project),`${item.id}-${normalizeLane(role)}.md`);
@@ -1614,7 +2201,7 @@ async function runCollaboratorReviews(item:CommandHistory,project:Project,leadPr
   const context=results.map(x=>`[${x.role}] ${x.text.replace(/\s+/g," ").slice(0,1400)}`).join("\n");
   item.collaboratorSummary=results.map(x=>`${x.role}: ${x.blocked?"BLOCK":x.ok?"PASS":"ERROR"}`).join(" · ");
   saveJson(historyFile,commandHistory);pushHistory();
-  return {ok:blocked.length===0&&results.every(x=>x.ok),context};
+  return {ok:blocked.length===0,context};
 }
 
 
@@ -1628,7 +2215,7 @@ async function runIsolatedCandidate(
   roleOverride?:string,
   scopeInstruction?:string
 ){
-  const exe=provider==="cursor"?findCursor():findClaude();
+  const exe=findProviderExe(provider);
   if(!exe)return {ok:false,label,provider,output:"",patch:"",files:[] as string[],stat:"",worktreePath:"",branch:"",error:`${provider} unavailable`};
 
   const wt=prepared?{ok:true,path:prepared.path,branch:prepared.branch,error:""}:createIsolatedWorktree(project,item,label);
@@ -1665,7 +2252,7 @@ async function runIsolatedCandidate(
       emitProjectEvent(project,normalizeLane(candidateRole),candidateRole,
         ok?"task_completed":"error",ok?"done":"error",item.workItemId||item.findingId||item.command,
         ok?`${candidateRole} candidate ready with ${diff.files.length} changed file(s)`:`${candidateRole} candidate failed: ${contractCheck.violations.length?`contract violation ${contractCheck.violations.join(", ")}`:text.slice(0,220)}`);
-      resolve({ok,label,provider,role:candidateRole,output:text,patch:diff.patch,files:diff.files,stat:diff.stat,worktreePath:wt.path,branch:wt.branch,error:ok?"":(contractCheck.violations.length?`Subtask contract blocked files: ${contractCheck.violations.join(", ")}`:(text||diff.error||"candidate produced no diff"))});
+      resolve({ok,label,provider,role:candidateRole,output:text,patch:diff.patch,files:diff.files,stat:diff.stat,worktreePath:wt.path,branch:wt.branch,error:ok?"":(contractCheck.violations.length?`Subtask contract blocked files: ${contractCheck.violations.join(", ")}`:isolateCandidateError(text,diff.error||"candidate produced no diff"))});
     });
   });
 }
@@ -1676,6 +2263,7 @@ async function verifyIsolatedCandidate(item:CommandHistory,mainProject:Project,c
   if(candidate.provider==="cursor"&&claude)provider="claude";
   else if(candidate.provider==="claude"&&cursor)provider="cursor";
   else provider=candidate.provider;
+  const otherProvider:ActiveProvider|null=provider==="claude"&&cursor?"cursor":provider==="cursor"&&claude?"claude":null;
   const exe=provider==="cursor"?cursor:provider==="claude"?claude:null;
   if(!provider||!exe)return {ok:false,verdict:"error",drift:"not_checked",text:"No candidate verifier available."};
 
@@ -1684,8 +2272,8 @@ async function verifyIsolatedCandidate(item:CommandHistory,mainProject:Project,c
   const candidateProject={...mainProject,path:candidate.worktreePath};
   const prompt=verifierPrompt(item,plan,candidate.output);
 
-  return await new Promise<any>(resolve=>{
-    const child=spawnRunner(provider,exe,candidateProject,prompt,false);
+  const runOnce=(chosen:ActiveProvider,chosenExe:string)=>new Promise<any>(resolve=>{
+    const child=spawnRunner(chosen,chosenExe,candidateProject,prompt,false);
     let output="",err="";
     child.stdout?.on("data",d=>{output+=d.toString();if(output.length>22000)output=output.slice(-22000);});
     child.stderr?.on("data",d=>{err+=d.toString();if(err.length>7000)err=err.slice(-7000);});
@@ -1694,10 +2282,18 @@ async function verifyIsolatedCandidate(item:CommandHistory,mainProject:Project,c
       const text=((code===0?output:(err||output))||"").trim();
       const parsed=parseVerifier(text);
       const dir=verifierDirectory(mainProject);
-      fs.writeFileSync(path.join(dir,`${item.id}-${slug(label)}.md`),text||`Candidate verifier exited ${code}`,"utf8");
+      fs.writeFileSync(path.join(dir,`${item.id}-${slug(label)}-${chosen}.md`),text||`Candidate verifier exited ${code}`,"utf8");
       resolve({ok:code===0&&parsed.verdict==="passed"&&parsed.drift==="clean",verdict:parsed.verdict,drift:parsed.drift,text});
     });
   });
+
+  const first=await runOnce(provider,exe);
+  if(first.ok)return first;
+  const otherExe=otherProvider==="cursor"?cursor:otherProvider==="claude"?claude:null;
+  if(otherProvider&&otherExe&&isProviderAuthFailure(first.text||"")){
+    return await runOnce(otherProvider,otherExe);
+  }
+  return first;
 }
 async function ctoSelectCompetitiveWinner(item:CommandHistory,project:Project,candidates:any[]){
   const valid=candidates.filter(c=>c.candidate.ok&&c.verification.ok);
@@ -1715,7 +2311,7 @@ async function ctoSelectCompetitiveWinner(item:CommandHistory,project:Project,ca
   ].join("\n")).join("\n\n");
 
   const provider=resolveProvider(project);
-  const exe=provider==="cursor"?findCursor():provider==="claude"?findClaude():null;
+  const exe=provider?findProviderExe(provider):null;
   if(provider&&exe){
     const prompt=[
       "You are the CTO selection gate for AI Development Office.",
@@ -1750,18 +2346,6 @@ async function ctoSelectCompetitiveWinner(item:CommandHistory,project:Project,ca
 }
 
 
-function candidateOverlapFiles(candidates:any[]){
-  const owners=new Map<string,string[]>();
-  for(const candidate of candidates){
-    for(const file of candidate.files||[]){
-      const current=owners.get(file)||[];
-      current.push(String(candidate.role||candidate.label||candidate.provider));
-      owners.set(file,current);
-    }
-  }
-  return [...owners.entries()].filter(([,roles])=>roles.length>1).map(([file,roles])=>({file,roles}));
-}
-
 function isolationPreflight(project:Project,item:CommandHistory){
   if(!isGitProject(project)){
     return {ok:false,message:"Collaborative/Competitive execution requires Git. Choose Solo for a non-Git project.",dirty:[] as string[]};
@@ -1787,6 +2371,7 @@ async function runIsolatedExecution(item:CommandHistory,project:Project,leadProv
   }
 
   item.isolationStatus="ready";
+  commitFactoryKit(project.path,`office-factory: snapshot before ${item.id}`);
   if(mode==="collaborative"){
     const codingRoles=[...new Set((item.collaboratorCodingRoles||[])
       .filter(Boolean)
@@ -1829,54 +2414,93 @@ async function runIsolatedExecution(item:CommandHistory,project:Project,leadProv
     });
 
     const candidates=await Promise.all(candidateJobs);
-    const failedCandidate=candidates.find(candidate=>!candidate.ok);
+    const skipped=candidates.filter(candidate=>isEmptyCodingSkip(candidate,leadLabel));
+    const failedCandidate=candidates.find(candidate=>!candidate.ok&&!isEmptyCodingSkip(candidate,leadLabel));
     if(failedCandidate){
       for(const candidate of candidates)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
       return {ok:false,message:`Isolated coding candidate failed: ${failedCandidate.role||failedCandidate.label} · ${failedCandidate.error}`};
     }
+    let mergeable=candidates.filter(candidate=>candidate.ok);
+    if(!mergeable.length){
+      for(const candidate of candidates)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+      return {ok:false,message:"Isolated coding produced no mergeable patch."};
+    }
+    if(skipped.length){
+      item.message=`${item.message||""} · skipped empty ${skipped.map(x=>x.role||x.label).join(", ")}`.trim();
+      for(const candidate of skipped)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+    }
 
     const candidateVerifications=await Promise.all(
-      candidates.map(async candidate=>({candidate,verification:await verifyIsolatedCandidate(item,project,candidate,candidate.label)}))
+      mergeable.map(async candidate=>({candidate,verification:await verifyIsolatedCandidate(item,project,candidate,candidate.label)}))
     );
-    const failedVerification=candidateVerifications.find(entry=>!entry.verification.ok);
-    if(failedVerification){
-      for(const candidate of candidates)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-      return {ok:false,message:`Candidate verifier blocked ${failedVerification.candidate.role||failedVerification.candidate.label}: ${failedVerification.verification.text.slice(0,300)}`};
+    const leadEntry=candidateVerifications.find(entry=>entry.candidate.label===leadLabel);
+    const blocked=candidateVerifications.filter(entry=>!entry.verification.ok);
+    const passed=candidateVerifications.filter(entry=>entry.verification.ok);
+    const leadAuthFail=!!(leadEntry&&leadEntry.candidate.ok&&!leadEntry.verification.ok&&isProviderAuthFailure(leadEntry.verification.text||""));
+    for(const entry of blocked){
+      if(leadAuthFail&&entry.candidate.label===leadLabel)continue;
+      if(entry.candidate.worktreePath)cleanupIsolatedWorktree(project,entry.candidate.worktreePath,entry.candidate.branch);
     }
-
-    // Conflict Detector: multiple coding agents may not silently edit the same file.
-    const overlaps=candidateOverlapFiles(candidates);
-    if(overlaps.length){
-      item.mergeGateStatus="blocked";
-      item.conflictFiles=overlaps.map(x=>x.file);
-      item.mergeGateSummary=`Candidate patch overlap detected: ${overlaps.map(x=>`${x.file} (${x.roles.join(" + ")})`).join("; ")}`;
-      for(const candidate of candidates)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-      isolationArtifact(project,item,{mode,candidates:candidates.map(c=>({role:c.role,provider:c.provider,files:c.files})),conflicts:overlaps,mergeGate:"blocked"});
-      return {ok:false,message:item.mergeGateSummary};
-    }
-
-    const applied:Array<{candidate:any;patchFile:string}>=[];
-    for(const candidate of candidates){
-      const gate=mergeGate(project,item,candidate.label,candidate.patch,candidate.files);
-      if(!gate.ok){
-        for(const previous of [...applied].reverse())rollbackMergePatch(project,item,previous.patchFile);
-        for(const c of candidates)cleanupIsolatedWorktree(project,c.worktreePath,c.branch);
-        return {ok:false,message:gate.error};
+    if(!leadEntry||!leadEntry.verification.ok){
+      if(leadAuthFail){
+        item.message=`${item.message||""} · candidate verifier auth failed; keeping lead for main-tree verify`.trim();
+        mergeable=[leadEntry.candidate];
+      } else {
+        for(const entry of passed)if(entry.candidate.worktreePath)cleanupIsolatedWorktree(project,entry.candidate.worktreePath,entry.candidate.branch);
+        const failed=leadEntry&&!leadEntry.verification.ok?leadEntry:blocked[0];
+        const why=failed?isolateCandidateError(failed.verification.text,`Candidate verifier blocked ${failed.candidate.role||failed.candidate.label}`):"Lead candidate missing verification";
+        return {ok:false,message:`Candidate verifier blocked ${failed?.candidate.role||failed?.candidate.label||"lead"}: ${why}`};
       }
-      if(!applyMergePatch(project,item,gate.patchFile)){
-        for(const previous of [...applied].reverse())rollbackMergePatch(project,item,previous.patchFile);
-        for(const c of candidates)cleanupIsolatedWorktree(project,c.worktreePath,c.branch);
-        return {ok:false,message:item.mergeGateSummary||"Collaborative merge failed"};
+    } else {
+      if(blocked.length){
+        item.message=`${item.message||""} · dropped unverified ${blocked.map(x=>x.candidate.role||x.candidate.label).join(", ")}`.trim();
       }
-      applied.push({candidate,patchFile:gate.patchFile});
+      mergeable=passed.map(entry=>entry.candidate);
     }
 
-    const combinedOutput=candidates.map(c=>`[${c.role||c.label} / ${c.provider}] ${c.output}`).join("\n\n");
+    // Overlap used to wipe every tree, including a green lead. Keep the lead
+    // and drop collaborators so the lane can still land.
+    const overlap=keepLeadOnOverlap(mergeable, leadLabel);
+    if(overlap.overlaps.length){
+      item.conflictFiles=overlap.overlaps.map(x=>x.file);
+      isolationArtifact(project,item,{mode,candidates:mergeable.map(c=>({role:c.role,provider:c.provider,files:c.files})),conflicts:overlap.overlaps,mergeGate:overlap.keptLead?"keep-lead":"blocked"});
+      if(overlap.keptLead){
+        item.mergeGateSummary=overlap.summary;
+        item.message=`${item.message||""} · ${item.mergeGateSummary}`.trim();
+        for(const candidate of overlap.dropped){
+          if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+        }
+        mergeable=overlap.mergeable;
+      } else {
+        item.mergeGateStatus="blocked";
+        item.mergeGateSummary=overlap.summary;
+        for(const candidate of overlap.dropped)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+        return {ok:false,message:item.mergeGateSummary};
+      }
+    }
+
+    const merge=beginFactoryMerge(project.path);
+    if(!("repo" in merge)){
+      item.mergeGateStatus="blocked";item.mergeGateSummary=merge.error;
+      for(const candidate of mergeable)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+      return {ok:false,message:merge.error};
+    }
+    for(const candidate of mergeable){
+      const merged=mergeCandidateIntoMain(project,item,candidate,merge);
+      if(!merged.ok){
+        closeFactoryMerge(project,item,merge,false,item.workItemTitle||item.command);
+        for(const c of mergeable)cleanupIsolatedWorktree(project,c.worktreePath,c.branch);
+        return {ok:false,message:merged.error};
+      }
+    }
+
+    const combinedOutput=mergeable.map(c=>`[${c.role||c.label} / ${c.provider}] ${c.output}`).join("\n\n");
     const verified=await runIndependentVerifier(item,project,leadProvider,combinedOutput);
-    if(!verified){
-      for(const previous of [...applied].reverse())rollbackMergePatch(project,item,previous.patchFile);
-      for(const candidate of candidates)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-      return {ok:false,message:`Combined collaborative result failed main-tree verification. ${item.driftSummary||""}`};
+    const title=item.workItemTitle||item.command;
+    if(!verified||!closeFactoryMerge(project,item,merge,verified,title)){
+      if(!verified)closeFactoryMerge(project,item,merge,false,title);
+      for(const candidate of mergeable)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+      return {ok:false,message:verified?item.mergeGateSummary||"Collaborative squash commit failed":`Combined collaborative result failed main-tree verification. ${item.driftSummary||""}`};
     }
 
     isolationArtifact(project,item,{
@@ -1887,7 +2511,7 @@ async function runIsolatedExecution(item:CommandHistory,project:Project,leadProv
       })),
       mergeGate:item.mergeGateStatus,verifier:item.verifierStatus
     });
-    for(const candidate of candidates)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
+    for(const candidate of mergeable)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
     return {ok:true,message:combinedOutput};
   }
 
@@ -1905,7 +2529,7 @@ async function runIsolatedExecution(item:CommandHistory,project:Project,leadProv
   ]);
   const verified=await Promise.all(candidates.map(async candidate=>({candidate,verification:await verifyIsolatedCandidate(item,project,candidate,candidate.label)})));
   const selection=await ctoSelectCompetitiveWinner(item,project,verified);
-  item.competitiveWinner=selection.winner;
+  item.competitiveWinner=selection.winner==="cursor"||selection.winner==="claude"?selection.winner:null;
   item.competitiveSummary=selection.text.replace(/\s+/g," ").slice(0,1000);
 
   if(!selection.winner){
@@ -1915,21 +2539,25 @@ async function runIsolatedExecution(item:CommandHistory,project:Project,leadProv
   }
 
   const winner=candidates.find(c=>c.provider===selection.winner)!;
-  const gate=mergeGate(project,item,`${winner.provider}-winner`,winner.patch,winner.files);
-  if(!gate.ok){
+  const merge=beginFactoryMerge(project.path);
+  if(!("repo" in merge)){
+    item.mergeGateStatus="blocked";item.mergeGateSummary=merge.error;
     for(const candidate of candidates)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-    return {ok:false,message:gate.error};
+    return {ok:false,message:merge.error};
   }
-  if(!applyMergePatch(project,item,gate.patchFile)){
+  const merged=mergeCandidateIntoMain(project,item,{label:`${winner.provider}-winner`,patch:winner.patch,files:winner.files,worktreePath:winner.worktreePath,branch:winner.branch},merge);
+  if(!merged.ok){
+    closeFactoryMerge(project,item,merge,false,item.workItemTitle||item.command);
     for(const candidate of candidates)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-    return {ok:false,message:item.mergeGateSummary||"Winner merge failed"};
+    return {ok:false,message:merged.error};
   }
 
   const mainVerified=await runIndependentVerifier(item,project,winner.provider,winner.output);
-  if(!mainVerified){
-    rollbackMergePatch(project,item,gate.patchFile);
+  const title=item.workItemTitle||item.findingTitle||item.command;
+  if(!mainVerified||!closeFactoryMerge(project,item,merge,mainVerified,title)){
+    if(!mainVerified)closeFactoryMerge(project,item,merge,false,title);
     for(const candidate of candidates)if(candidate.worktreePath)cleanupIsolatedWorktree(project,candidate.worktreePath,candidate.branch);
-    return {ok:false,message:`Competitive winner failed main-tree verification. ${item.driftSummary||""}`};
+    return {ok:false,message:mainVerified?item.mergeGateSummary||"Winner squash commit failed":`Competitive winner failed main-tree verification. ${item.driftSummary||""}`};
   }
 
   isolationArtifact(project,item,{
@@ -1959,11 +2587,15 @@ async function runItem(item:CommandHistory){
     return false;
   }
 
-  const exe=provider==="cursor"?findCursor():findClaude();
+  const exe=findProviderExe(provider);
   if(!exe)return false;
+  try{safety.breaker.state(item.id,{projectId:project.id,agentId:roleToAgentId(item.assignedRole||"specialist")});}catch{}
 
   if(!claimLane(item,provider))return false;
   pushRunner();
+
+  attachCurrentWorkItem(item,project);
+  if(item.workItemId){saveJson(historyFile,commandHistory);pushHistory();}
 
   if(commandRequiresPlan(item)&&!item.planPath){
     const planned=await createPlan(item,project,provider,exe);
@@ -2072,13 +2704,18 @@ async function runItem(item:CommandHistory){
       item.status=ok?"completed":"failed";
       if(item.recoveryState==="recoverable")item.recoveryState="none";
       item.qualityGateStatus=ok?(isMutating(item)?"pending_reaudit":"execution_passed"):"failed";
-      item.completedAt=new Date().toISOString();item.message=message.slice(0,320);
-      writeTaskReport(item,project,message,ok);
+      let finalMessage=message;
+      if(ok&&String(item.command||"").trim().toLowerCase()==="recheck completed work"){
+        const n=markPendingReauditVerified(project.id);
+        if(n)finalMessage=`${message} · marked ${n} command(s) verified`;
+      }
+      item.completedAt=new Date().toISOString();item.message=finalMessage.slice(0,320);
+      writeTaskReport(item,project,item.message,ok);
       writeDependencyGraph(project.id);
       releaseLane(item);
       saveJson(historyFile,commandHistory);pushHistory();pushRunner();
-      emitProjectEvent(project,"ceo","CEO",ok?"task_completed":"error",ok?"done":"error",item.command,message);
-      auditLog(project.id,"Office Runner",ok?"task_completed":"task_failed",item.workItemId||item.findingId||item.command,ok?"success":"error",message.slice(0,500));pushAuditTrail();
+      emitProjectEvent(project,"ceo","CEO",ok?"task_completed":"error",ok?"done":"error",item.command,item.message);
+      auditLog(project.id,"Office Runner",ok?"task_completed":"task_failed",item.workItemId||item.findingId||item.command,ok?"success":"error",item.message.slice(0,500));pushAuditTrail();
       resolve(ok);
     };
 
@@ -2101,6 +2738,15 @@ async function runItem(item:CommandHistory){
           item.qualityGateStatus="failed";
           finish(false,`Independent verifier blocked completion. ${item.driftSummary||""}`);
           return;
+        }
+        const committed=commitDirtyWorktree(project.path,`office-factory: ${item.workItemTitle||item.workItemId||item.command}`);
+        if(!committed.ok){
+          finish(false,`Independent verifier passed but commit failed. ${committed.error||""}`);
+          return;
+        }
+        if(committed.committed){
+          item.mergeGateStatus="passed";
+          item.mergeGateSummary=`Committed ${String(committed.sha||"").slice(0,7)} on Solo mutating path.`;
         }
       }else{
         item.verifierStatus="not_required";item.driftStatus="not_checked";
@@ -2221,6 +2867,7 @@ function writeTaskReport(item:CommandHistory,project:Project,resultText:string,o
     isolationStatus:item.isolationStatus||"not_required",
     worktreePaths:item.worktreePaths||{},
     mergeGateStatus:item.mergeGateStatus||"not_required",
+    mergeMethod:item.mergeMethod||"none",
     mergeGateSummary:item.mergeGateSummary||null,
     conflictFiles:item.conflictFiles||[],
     competitiveWinner:item.competitiveWinner||null,
@@ -2265,7 +2912,7 @@ async function processQueue(){
 
   // Read-only commands get their own lanes so a long status does not block review/coverage.
   // Mutating work is preferred when slots are scarce.
-  const selected=pickQueueItems(ready,activeLaneItems.keys(),capacity,item=>laneFor(item));
+  const selected=pickQueueItems(ready,activeLaneItems.keys(),capacity,item=>laneFor(item)) as CommandHistory[];
 
   if(candidates.length) {
     const touchedProjects=new Set(candidates.map(x=>x.projectId));
@@ -2276,6 +2923,7 @@ async function processQueue(){
 
   for(const next of selected){
     void runItem(next).then(ok=>{
+      afterQueueItem(next,!!ok,next.message||"");
       if(!ok&&next.queueGroupId){
         let changed=false;
         const failedLane=laneFor(next);
@@ -2296,6 +2944,9 @@ async function processQueue(){
       processQueue();
     }).catch(error=>{
       console.error("Parallel lane runner failed:",error);
+      next.status="failed";
+      next.message=String(error?.message||error);
+      afterQueueItem(next,false,next.message);
       releaseLane(next);pushRunner();processQueue();
     });
   }
@@ -2406,7 +3057,8 @@ function setProjectTrust(id:string,trusted:boolean){
 }
 
 function setProjectProvider(id:string,provider:Provider){
-  if(!["auto","cursor","claude"].includes(provider))throw new Error("Invalid provider");
+  const allowed=new Set<string>(["auto",...QUEUE_PROVIDERS]);
+  if(!allowed.has(provider))throw new Error("Invalid provider");
   const p=projects.find(x=>x.id===id);if(!p)throw new Error("Project not found.");
   p.provider=provider;saveJson(projectsFile,projects);pushProjects();pushRunner();processQueue();
 }
@@ -2572,7 +3224,8 @@ function queueWorkItem(projectId:string,item:any){
     collaboratorRoles:collaboratorsForWork(type,role,item.collaboratorRoles),
     collaboratorCodingRoles:Array.isArray(item.collaboratorCodingRoles)?item.collaboratorCodingRoles.map(String).filter(Boolean):[],
     executionMode:["solo","collaborative","competitive"].includes(String(item.executionMode))?String(item.executionMode) as any:"collaborative",
-    message:`CEO queued ${item.id} for ${role}`
+    message:`CEO queued ${item.id} for ${role}`,
+    ...(QUEUE_PROVIDERS.includes(String(item.provider||"") as any)?{provider:String(item.provider) as any}:{})
   });
 }
 function queueWorkItems(projectId:string,items:any[]){
@@ -2675,6 +3328,7 @@ wss.on("connection",socket=>{
   socket.send(JSON.stringify({type:"onboarding",data:onboardingSnapshot()}));
   socket.send(JSON.stringify({type:"command_history",data:historyForClient(commandHistory)}));
   socket.send(JSON.stringify({type:"runner_status",data:runnerStatus()}));
+  for(const p of projects.filter(x=>x.enabled))socket.send(JSON.stringify({type:"factory_status",data:factorySnapshot(p.id)}));
   socket.send(JSON.stringify({type:"agent_names",data:settings.agentNamesByProject||{}}));
   socket.send(JSON.stringify({type:"mission_settings",data:missionSettingsSnapshot()}));
   socket.send(JSON.stringify({type:"audit_trail",data:readAuditTrail()}));
@@ -2832,14 +3486,71 @@ wss.on("connection",socket=>{
         });
       }
       else if(m.action==="queue_command"){
+        const projectId=String(m.project_id||m.data?.projectId||"");
+        const command=String(m.command||m.data?.command||"");
         const role=String(m.assignedRole||m.assigned_role||m.data?.assignedRole||"").trim();
-        queueBase(String(m.project_id||m.data?.projectId||""),String(m.command||m.data?.command||""),role?{
-          assignedRole:role,
-          leadRole:role,
-          message:`Queued for ${role}`
-        }:{});
+        const extra:Partial<CommandHistory>={};
+        if(role){
+          extra.assignedRole=role;
+          extra.leadRole=role;
+          extra.message=`Queued for ${role}`;
+        }
+        if(isMutatingCommand(command))extra.executionMode="collaborative";
+        const project=projects.find(p=>p.id===projectId);
+        if(project){
+          const bound=currentTaskWorkItem(project.path);
+          const normalized=command.trim().toLowerCase();
+          if(bound&&!extra.workItemId&&(normalized==="continue"||normalized==="fix next")){
+            extra.workItemId=bound.workItemId;
+            extra.workItemTitle=bound.workItemTitle||undefined;
+          }
+        }
+        queueBase(projectId,command,extra);
       }
       else if(m.action==="queue_finding")queueFinding(String(m.project_id||""),String(m.finding_id||""),String(m.finding_title||""));
+      else if(m.action==="factory_status")socket.send(JSON.stringify({type:"factory_status",data:factorySnapshot(String(m.project_id||""))}));
+      else if(m.action==="factory_start")socket.send(JSON.stringify({type:"factory_status",data:startFactory(String(m.project_id||""))}));
+      else if(m.action==="factory_stop")socket.send(JSON.stringify({type:"factory_status",data:stopFactory(String(m.project_id||""))}));
+      else if(m.action==="coordination_snapshot")socket.send(JSON.stringify({type:"coordination_snapshot",data:coordinationSnapshot(String(m.project_id||""))}));
+      else if(m.action==="lease_release"){
+        const p=officeProject(String(m.project_id||""));
+        releaseLease(p.path,String(m.agent_id||""),m.task_id?String(m.task_id):undefined);
+        pushCoordination(p.id);
+        socket.send(JSON.stringify({type:"coordination_snapshot",data:coordinationSnapshot(p.id)}));
+      }
+      else if(m.action==="ask_cli"){
+        const project=officeProject(String(m.project_id||""));
+        const provider=String(m.provider||"gemini") as ProviderId;
+        const exe=findProviderExe(provider);
+        if(!exe)throw new Error(`${provider} CLI not found.`);
+        const result=askCli({provider,executable:exe,projectPath:project.path,prompt:String(m.prompt||""),timeoutMs:45000});
+        const payload={provider,ok:result.ok,output:result.output,error:result.error};
+        traceTool(project,{itemId:"consult",agentId:"office",kind:"consult",name:`ask_${provider}`,status:result.ok?"ok":"failed",detail:String(m.prompt||"").slice(0,200)});
+        pushCoordination(project.id);
+        broadcast({type:"ask_cli_result",data:payload});
+        socket.send(JSON.stringify({type:"ask_cli_result",data:payload}));
+      }
+      else if(m.action==="set_factory_settings"){
+        const projectId=String(m.project_id||"");
+        const current=factorySettingsFor(projectId);
+        if(typeof m.hive_enabled==="boolean")current.hiveEnabled=m.hive_enabled;
+        if(Number.isFinite(Number(m.max_concurrent)))current.maxConcurrent=Math.max(1,Number(m.max_concurrent));
+        if(m.ceilings&&typeof m.ceilings==="object")current.ceilings={...current.ceilings,...m.ceilings};
+        if("group_template_id" in m)current.groupTemplateId=m.group_template_id?String(m.group_template_id):null;
+        factoryStateFor(projectId).hiveEnabled=current.hiveEnabled;
+        saveJson(settingsFile,settings);
+        pushFactory(projectId);
+        socket.send(JSON.stringify({type:"factory_status",data:factorySnapshot(projectId)}));
+      }
+      else if(m.action==="set_custom_cli"){
+        settings.customCli={command:String(m.command||""),args:Array.isArray(m.args)?m.args.map(String):["{prompt}"]};
+        if(settings.customCli.command)process.env.OFFICE_CUSTOM_EXECUTABLE=settings.customCli.command;
+        providerCache=null;
+        saveJson(settingsFile,settings);
+        const projectId=String(m.project_id||projects[0]?.id||"");
+        if(projectId)pushFactory(projectId);
+        socket.send(JSON.stringify({type:"factory_status",data:projectId?factorySnapshot(projectId):{customCli:settings.customCli}}));
+      }
       else if(m.action==="queue_work_item")queueWorkItem(String(m.project_id||""),m.item||{});
       else if(m.action==="queue_work_items")queueWorkItems(String(m.project_id||""),Array.isArray(m.items)?m.items:[]);
       else if(m.action==="answer_feature_decision")saveFeatureDecision(String(m.project_id||""),String(m.feature_id||""),String(m.key||""),String(m.answer||""));
@@ -2873,7 +3584,7 @@ wss.on("connection",socket=>{
         const session=runtimeProcesses.get(String(m.session_id||""));
         if(!session)throw new Error("Runtime session not found.");
         const p=officeProject(session.projectId);
-        const auth=authorizationService.authorize({projectId:p.id,projectPath:p.path,actor:"user",action:"terminalWrite",policy:DEFAULT_PERMISSION_POLICY,profile:getSandboxProfile("guarded"),approvalId:m.approval_id?String(m.approval_id):null});
+        const auth=authorizationService.authorize({projectId:p.id,projectPath:p.path,actor:"user",action:"terminalWrite",policy:permissionPolicyFor(p),profile:getSandboxProfile("guarded"),approvalId:m.approval_id?String(m.approval_id):null});
         if(!auth.allowed){socket.send(JSON.stringify({type:"safety_authorization_result",data:auth}));broadcast({type:"safety_v2_snapshot",projectId:p.id,data:safetyV2Snapshot(p.id)});return;}
         runtimeProcesses.write(String(m.session_id||""),String(m.data||""));
       }
@@ -3652,12 +4363,17 @@ wss.on("connection",socket=>{
 
 refreshWatchers();
 setInterval(()=>{for(const p of projects.filter(x=>x.enabled))pumpEvents(p);pushRunner();processQueue();},1500);
-setInterval(()=>{runDueAudits();},60000);
+setInterval(()=>{runDueAudits();runtimeProcesses.wakeupIdle();runtimeProcesses.pruneExited();},60000);
 
 const boot=runnerStatus();
 console.log(`AI Development Office bridge listening on ws://localhost:${port}`);
 console.log(`Persistent data: ${dataRoot}`);
-console.log(`Cursor: ${boot.providers.cursor.available?"ONLINE":"OFFLINE"} ${boot.providers.cursor.executable||""}`);
-console.log(`Claude: ${boot.providers.claude.available?"ONLINE":"OFFLINE"} ${boot.providers.claude.executable||""}`);
-console.log(`Projects: ${projects.length}`);
-for(const p of projects)console.log(` - ${p.name}: ${p.path} [${p.provider||"auto"}]`);
+console.log(`Cursor: ${boot.providers.cursor?.available?"ONLINE":"OFFLINE"} ${boot.providers.cursor?.executable||""}`);
+console.log(`Claude: ${boot.providers.claude?.available?"ONLINE":"OFFLINE"} ${boot.providers.claude?.executable||""}`);
+const extraOn=QUEUE_PROVIDERS.filter(id=>id!=="cursor"&&id!=="claude"&&boot.providers[id]?.available).map(String);
+const extraOff=QUEUE_PROVIDERS.filter(id=>id!=="cursor"&&id!=="claude"&&!boot.providers[id]?.available).map(String);
+if(extraOn.length)console.log(`Other CLIs online: ${extraOn.join(" ")}`);
+if(extraOff.length)console.log(`Optional CLIs not installed: ${extraOff.join(" ")}`);
+const listed=projects.filter(p=>p.enabled);
+console.log(`Projects: ${listed.length}`);
+for(const p of listed)console.log(` - ${p.name}: ${p.path} [${p.provider||"auto"}]`);

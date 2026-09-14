@@ -2,6 +2,7 @@ import {create} from "zustand";
 import type {PixelAgentState,PixelStationId} from "./types";
 import {mapOfficeRuntimeEvent,roleDefaultStation} from "./event-map";
 import {inferRosterAgentIds,isPixelActive,normalizeAgentKey,resolveLiveAgentId} from "./agent-match";
+import {commandStageProgress} from "@/factory/command-progress";
 
 export type PixelLiveAgent={
   id:string;
@@ -174,7 +175,8 @@ export const usePixelOfficeLiveStore=create<State>((set)=>({
         message:command.title||command.command||"Assigned work",
         status:command.status
       });
-      applyMapped(next,id,mapped,command);
+      const progress=commandStageProgress(command.status,command.startedAt,command.updatedAt);
+      applyMapped(next,id,mapped,{...command,data:{...(command.data||{}),progress:typeof command.progress==="number"?command.progress:progress}});
       changed=true;
     }
     return changed?{liveAgents:next}:state;

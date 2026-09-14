@@ -2,6 +2,7 @@ import {spawnSync} from "node:child_process";
 import type {ProviderHealth,ProviderId} from "./types";
 import {ProviderRegistry} from "./registry";
 import {ProviderResolver} from "./resolver";
+import {spawnEnv,wrapWindowsCli} from "./win-cli";
 
 function now(){return new Date().toISOString();}
 
@@ -22,7 +23,8 @@ export class ProviderHealthMonitor{
     let status:"healthy"|"degraded"="healthy";
     let message="Executable detected.";
     try{
-      const result=spawnSync(executable,["--version"],{encoding:"utf8",timeout:4000,windowsHide:true});
+      const wrapped=wrapWindowsCli(executable,["--version"]);
+      const result=spawnSync(wrapped.command,wrapped.args,{encoding:"utf8",timeout:4000,windowsHide:true,env:spawnEnv()});
       if(result.error){
         status="degraded";
         message=result.error.message;

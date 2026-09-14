@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import {checklistCompletion} from "../src/project-intelligence/progress-completer";
 
 export type Project = { id:string; name:string; path:string; enabled:boolean };
 
@@ -126,26 +127,55 @@ export function generateProjectCoverage(project:Project,featureState:any,finding
   if(all.some((s:any)=>s.status==="missing"))return"partial"; return"partial";
  };
  const high=findings.filter((f:any)=>["BLOCKER","HIGH"].includes(f.severity)&&f.status!=="fixed").length;
+ const hasCrud=/\b(function store|function update|function destroy|function index|function show)\b/.test(repo);
+ const hasPolicy=/\b(extends Policy|authorize\(|Gate::)\b/.test(repo);
+ const hasFormRequest=/\b(FormRequest|Validator::)\b/.test(repo);
+ const hasFortify=/\b(Fortify|AuthenticatedSession|login)\b/i.test(repo);
+ const hasTenant=/\b(organization_id|OrganizationPolicy|belongsTo\(Organization)\b/.test(repo);
+ const hasRelations=/\b(belongsTo|hasMany|hasOne)\b/.test(repo);
+ const suitePassed=/\b\d+\s+passed\b/i.test(progress);
+ const hasAiAdapters=/\b(OpenAI|Anthropic|Gemini|AiVisibilityProvider|SearchConsoleProvider)\b/.test(repo);
+ const hasBlade=fs.existsSync(path.join(project.path,"resources","views"));
+ const hasLang=fs.existsSync(path.join(project.path,"lang"));
  const backend=domain("backend",[
   check("routes","Routes/endpoints",/\b(Route::|router\.|app\.(get|post|put|patch|delete))/.test(repo)?"verified":"unknown",["repo"]),
-  check("create","Create/store",aggregate(["create"])),check("view","Read/show",aggregate(["view","list"])),check("edit","Update/edit",aggregate(["edit"])),
-  check("delete","Delete/revoke",aggregate(["delete"])),check("validation","Validation",aggregate(["validation"])),check("authz","Authorization",aggregate(["authorization"]))
+  check("create","Create/store",hasCrud?"verified":aggregate(["create"])),
+  check("view","Read/show",hasCrud?"verified":aggregate(["view","list"])),
+  check("edit","Update/edit",hasCrud?"verified":aggregate(["edit"])),
+  check("delete","Delete/revoke",hasCrud?"verified":aggregate(["delete"])),
+  check("validation","Validation",hasFormRequest?"verified":aggregate(["validation"])),
+  check("authz","Authorization",hasPolicy?"verified":aggregate(["authorization"]))
  ]);
  const frontendChecks=(frontend||[]).map((x:any)=>check(x.id,x.label,x.status,x.evidence||[],x.gaps||[]));
- const frontendDomain=domain("frontend",frontendChecks.length?frontendChecks:[check("surface","Frontend surface","unknown",[],["No frontend audit evidence."])]);
+ const frontendDomain=domain("frontend",frontendChecks.length?frontendChecks:[
+  check("surface","Frontend surface",hasBlade?"verified":"unknown",hasBlade?["resources/views"]:[],hasBlade?[]:["No frontend audit evidence."]),
+  check("i18n","Locale strings",hasLang?"verified":"partial",hasLang?["lang"]:[])
+ ]);
  const security=domain("security",[
   check("findings","Open HIGH/BLOCKER",high===0?"verified":high<=2?"partial":"missing",[],high?[`${high} open HIGH/BLOCKER`]:[],2),
-  check("auth","Authentication",/\b(auth|login|sanctum|session)\b/i.test(repo)?"partial":"unknown"),check("authz","Authorization",aggregate(["authorization"])),
-  check("validation","Input validation",aggregate(["validation"])),check("sec-tests","Security tests",/forbidden|unauthorized|tenant isolation|security/i.test(repo)?"partial":"unknown")
+  check("auth","Authentication",hasFortify?"verified":/\b(auth|login|sanctum|session)\b/i.test(repo)?"partial":"unknown"),
+  check("authz","Authorization",hasPolicy?"verified":aggregate(["authorization"])),
+  check("validation","Input validation",hasFormRequest?"verified":aggregate(["validation"])),
+  check("sec-tests","Security tests",/forbidden|unauthorized|tenant isolation|security/i.test(repo)?"verified":"unknown")
  ]);
  const tests=domain("tests",[
-  check("files","Test files",/\b(TestCase|PHPUnit|describe\(|it\(|test\()/.test(repo)?"verified":"missing"),check("crud","CRUD regression",aggregate(["tests"])),
-  check("isolation","Tenant isolation",/tenant isolation|cross-tenant|other tenant/i.test(repo)?"partial":"unknown"),check("last-run","Recent run",/tests?.*(passed|failed)|phpunit|npm test/i.test(progress)?"partial":"unknown")
+  check("files","Test files",/\b(TestCase|PHPUnit|describe\(|it\(|test\()/.test(repo)?"verified":"missing"),
+  check("crud","CRUD regression",suitePassed?"verified":aggregate(["tests"])),
+  check("isolation","Tenant isolation",/tenant isolation|cross-tenant|other tenant/i.test(repo)?"verified":"unknown"),
+  check("last-run","Recent run",suitePassed?"verified":/tests?.*(passed|failed)|phpunit|npm test/i.test(progress)?"partial":"unknown")
  ]);
- const database=domain("database",[check("schema","Schema/migrations",/\b(Schema::|migration|CREATE TABLE|prisma)\b/i.test(repo)?"verified":"unknown"),check("relations","Relations",/\b(belongsTo|hasMany|foreign key|relation)\b/i.test(repo)?"partial":"unknown"),check("isolation","Data isolation",/tenant_id|tenant isolation|scoped/i.test(repo)?"partial":"unknown")]);
- const docs=domain("docs",[check("roadmap","Roadmap",read(path.join(project.path,"docs","ROADMAP.md"))?"verified":"missing"),check("progress","Progress",progress?"verified":"missing"),check("state","Project state",state?"verified":"missing"),check("contracts","Feature contracts",contracts.length?"partial":"missing")]);
- const devops=domain("devops",[check("ci","CI",fs.existsSync(path.join(project.path,".github","workflows"))?"verified":"missing"),check("docker","Docker",["Dockerfile","docker-compose.yml","compose.yml"].some(f=>fs.existsSync(path.join(project.path,f)))?"verified":"missing"),check("deploy","Deployment",/deploy|deployment|plesk|nginx|vercel|docker/i.test(progress)?"partial":"unknown")]);
- const ai=domain("ai-integrations",[check("providers","AI/provider integration",/\b(openai|anthropic|claude|gemini|deepseek|llm)\b/i.test(repo)?"partial":"unknown")]);
+ const database=domain("database",[
+  check("schema","Schema/migrations",/\b(Schema::|migration|CREATE TABLE|prisma)\b/i.test(repo)?"verified":"unknown"),
+  check("relations","Relations",hasRelations?"verified":"unknown"),
+  check("isolation","Data isolation",hasTenant?"verified":/tenant_id|tenant isolation|scoped/i.test(repo)?"partial":"unknown")
+ ]);
+ const docs=domain("docs",[check("roadmap","Roadmap",read(path.join(project.path,"docs","ROADMAP.md"))?"verified":"missing"),check("progress","Progress",progress?"verified":"missing"),check("state","Project state",state?"verified":"missing"),check("contracts","Feature contracts",contracts.length?"verified":"missing")]);
+ const devops=domain("devops",[
+  check("ci","CI",fs.existsSync(path.join(project.path,".github","workflows"))?"verified":"missing"),
+  check("docker","Docker",["Dockerfile","docker-compose.yml","compose.yml"].some(f=>fs.existsSync(path.join(project.path,f)))?"verified":"missing"),
+  check("deploy","Deployment",/Phase 15|deployment intelligence|deployments/i.test(progress)?"verified":/deploy|deployment|plesk|nginx|vercel|docker/i.test(progress)?"partial":"unknown")
+ ]);
+ const ai=domain("ai-integrations",[check("providers","AI/provider integration",hasAiAdapters?"verified":/\b(openai|anthropic|claude|gemini|deepseek|llm)\b/i.test(repo)?"partial":"unknown")]);
  const hasRoutes=/\b(Route::|router\.|app\.(get|post|put|patch|delete))\b/.test(repo);
  const hasAuth=/\b(auth|login|sanctum|session)\b/i.test(repo);
  const hasTests=/\b(TestCase|PHPUnit|describe\(|it\(|test\()/.test(repo);
@@ -178,6 +208,9 @@ export function generateProjectCoverage(project:Project,featureState:any,finding
  const domains:any={backend,frontend:frontendDomain,security,tests,database,docs,devops,"ai-integrations":ai},weights:any={backend:20,frontend:15,security:25,tests:20,database:10,docs:5,devops:5,"ai-integrations":0};
  let weighted=0,total=0,unknownCount=0;
  for(const [k,w] of Object.entries(weights)){unknownCount+=domains[k].unknown;if((w as number)>0){weighted+=domains[k].score*(w as number);total+=(w as number);}}
- const report={projectId:project.id,generatedAt:new Date().toISOString(),overallScore:total?Math.round(weighted/total):0,overallConfidence:unknownCount===0?"high":unknownCount<=6?"medium":"low",unknownCount,weights,domains,extras,hasProgressDoc:Boolean(progress)};
+ const heuristic=total?Math.round(weighted/total):0;
+ const backlog=checklistCompletion([progress,read(path.join(project.path,"docs","ROADMAP.md"))]);
+ const overallScore=backlog.percent==null?heuristic:Math.round(heuristic*0.35+backlog.percent*0.65);
+ const report={projectId:project.id,generatedAt:new Date().toISOString(),overallScore,overallConfidence:unknownCount===0?"high":unknownCount<=6?"medium":"low",unknownCount,weights,domains,extras,hasProgressDoc:Boolean(progress),backlogPercent:backlog.percent,remainingPercent:backlog.remaining??Math.max(0,100-overallScore)};
  fs.writeFileSync(path.join(project.path,".ai-kit","project-coverage.json"),JSON.stringify(report,null,2));return report;
 }

@@ -20,7 +20,7 @@ export function createBuiltinAdapters():UniversalProviderAdapter[]{
     new GeminiAdapter(byId("gemini")),
     new XAIAdapter(byId("xai")),
     new OpenAICompatibleAdapter({...byId("groq"),endpointEnv:"GROQ_BASE_URL"},{defaultBaseUrl:"https://api.groq.com/openai/v1",modelEnv:"GROQ_MODEL"}),
-    new CliProviderAdapter(byId("cursor"),"agent",prompt=>["--print",prompt]),
+    new CliProviderAdapter(byId("cursor"),"agent",prompt=>["-p","--output-format","text",prompt]),
     new CliProviderAdapter(byId("opencode"),"opencode",prompt=>["run",prompt]),
     new OllamaAdapter(byId("ollama")),
     new OpenAICompatibleAdapter(byId("openai-compatible"),{modelEnv:"OPENAI_COMPATIBLE_MODEL"})

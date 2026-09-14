@@ -198,7 +198,20 @@ export function PixelOfficeRuntime(){
       canAssign={!!activeProject}
       onClose={closeDesk}
       onAssign={assignDeskTask}
-      onOpenTerminal={()=>{setTerminalOpen(true);}}
+      onOpenTerminal={()=>{
+        if(!deskAgent||!activeProject){setTerminalOpen(true);return;}
+        if(!deskSession && activeProject.runnerTrusted){
+          sendOffice({
+            action:"runtime_spawn",
+            project_id:activeProject.id,
+            provider:activeProject.provider||"auto",
+            agent_id:deskAgent.id,
+            role:deskAgent.role||deskAgent.id,
+            task:`Live ${deskAgent.role||deskAgent.id} desk session`
+          });
+        }
+        setTerminalOpen(true);
+      }}
     />
     <TerminalModal open={terminalOpen} onClose={()=>setTerminalOpen(false)}/>
   </section>;

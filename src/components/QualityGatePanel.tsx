@@ -42,7 +42,7 @@ export function QualityGatePanel(){
           <div className={stageClass(collaborator)}><i>2</i><span>{t("tasks.stageCollab")}</span><b>{row.collaboratorRoles?.length?`${row.collaboratorRoles.length} · ${collaborator}`:"n/a"}</b></div><em>→</em>
           <div className={stageClass(isolation)}><i>3</i><span>{t("tasks.stageIsolate")}</span><b>{row.executionMode||"solo"}</b></div><em>→</em>
           <div className={stageClass(lead)}><i>4</i><span>{t("tasks.stageExecute")}</span><b>{row.competitiveWinner?t("tasks.winner").replace("{name}",row.competitiveWinner):lead}</b></div><em>→</em>
-          <div className={stageClass(merge)}><i>5</i><span>{t("tasks.stageMerge")}</span><b>{row.mergeGateStatus||"n/a"}</b></div><em>→</em>
+          <div className={stageClass(merge)}><i>5</i><span>{t("tasks.stageMerge")}</span><b>{row.mergeMethod&&row.mergeMethod!=="none"?t(row.mergeMethod==="patch"?"coord.patch":"coord.squash"):row.mergeGateStatus||"n/a"}</b></div><em>→</em>
           <div className={stageClass(verifier)}><i>6</i><span>{t("tasks.stageVerifier")}</span><b>{row.driftStatus==="detected"?t("tasks.drift"):verifier}</b></div><em>→</em>
           <div className={stageClass(reaudit)}><i>7</i><span>{t("tasks.stageReaudit")}</span><b>{row.qualityGateStatus||reaudit}</b></div>
           <button disabled={!row.taskReportPath} onClick={()=>openReport(row.id)}>{t("queue.report")}</button>

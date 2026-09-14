@@ -30,4 +30,6 @@ export interface ProjectCoverageReport {
   domains: Record<CoverageDomain, CoverageDomainReport>;
   extras?: CoverageDomainReport[];
   hasProgressDoc?: boolean;
+  backlogPercent?: number | null;
+  remainingPercent?: number | null;
 }

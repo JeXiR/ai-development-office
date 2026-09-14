@@ -3,7 +3,7 @@ import {ProviderEngine} from "../src/providers/engine";
 const engine=new ProviderEngine();
 
 const registry=engine.registry.list();
-for(const id of ["cursor","claude","codex","gemini","opencode","local"]){
+for(const id of ["cursor","claude","codex","gemini","copilot","kimi","qwen","crush","pi","grok","custom","opencode","local"]){
   if(!registry.some(x=>x.id===id))throw new Error(`missing provider ${id}`);
 }
 

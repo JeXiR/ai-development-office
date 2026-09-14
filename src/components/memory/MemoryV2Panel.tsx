@@ -50,6 +50,14 @@ export function MemoryV2Panel(){
       {state.specialties.map(s=><span key={s.tag}>{s.tag} {s.score}</span>)}
     </div>
 
+    {state.graph?<div className="memory-palace">
+      <strong>{t("memory.palace")}</strong>
+      <small>{Object.entries(state.graph.rooms||{}).map(([room,count])=>`${room}:${count}`).join(" · ")}</small>
+      <div className="memory-hit-list">
+        {(state.graph.edges||[]).slice(-8).reverse().map(edge=><article key={edge.id}><div><strong>{edge.title}</strong><small>{edge.from} {edge.rel} {edge.to}</small></div></article>)}
+      </div>
+    </div>:null}
+
     <div className="memory-record-grid">
       {state.records.slice(-20).reverse().map(r=><article key={r.id}><strong>{r.title}</strong><small>{r.category} · importance {r.importance.toFixed(2)} · confidence {r.confidence.toFixed(2)}</small><span>{r.tags.join(" · ")}</span></article>)}
     </div>

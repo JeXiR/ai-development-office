@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import os from "node:os";
 import * as pty from "node-pty";
+import {spawnEnv,wrapWindowsCli} from "../providers/win-cli";
+import {DEFAULT_PTY_IDLE_MS,formatWakeup,idleRuntimeSessions} from "../collaboration/hive";
 import {RuntimeEventBus} from "./event-bus";
 import type {
   RuntimeSessionSnapshot,
@@ -67,14 +69,14 @@ export class AgentProcessManager{
     });
 
     try{
-      const env={
-        ...process.env,
+      const env=spawnEnv({
         ...(input.env||{}),
         TERM:process.env.TERM||"xterm-256color",
         COLORTERM:process.env.COLORTERM||"truecolor"
-      } as Record<string,string>;
+      });
 
-      const child=pty.spawn(input.executable,input.args||[],{
+      const wrapped=wrapWindowsCli(input.executable,input.args||[]);
+      const child=pty.spawn(wrapped.command,wrapped.args,{
         name:"xterm-256color",
         cols:snapshot.cols,
         rows:snapshot.rows,
@@ -294,6 +296,29 @@ export class AgentProcessManager{
       if(this.terminate(session.snapshot.id))count++;
     }
     return count;
+  }
+
+  wakeupIdle(idleMs=DEFAULT_PTY_IDLE_MS){
+    const ids=idleRuntimeSessions(
+      [...this.sessions.values()].map(session=>({
+        id:session.snapshot.id,
+        status:session.snapshot.status,
+        paused:session.paused,
+        lastActivityAt:session.snapshot.lastActivityAt
+      })),
+      Date.now(),
+      idleMs
+    );
+    let woken=0;
+    for(const id of ids){
+      const session=this.sessions.get(id);
+      if(!session)continue;
+      try{
+        this.write(id, formatWakeup(session.snapshot.agentId||session.snapshot.role||"agent"));
+        woken++;
+      }catch{}
+    }
+    return woken;
   }
 
   pruneExited(maxAgeMs=60*60*1000){

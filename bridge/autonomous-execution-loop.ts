@@ -13,6 +13,7 @@ import {MissionEvidenceStore} from "../src/orchestration/evidence";
 import {ApprovalInboxStore} from "../src/orchestration/approval-inbox";
 import {MissionEventJournal} from "../src/orchestration/event-journal";
 import {recordMissionProgress} from "../src/project-intelligence/progress-updater";
+import {ensureOfficeProjectDocs,isDocsBootstrapGoal} from "../src/project-intelligence/docs-bootstrap";
 import type {MissionExecutionEvent,MissionExecutionSummary} from "../src/orchestration/execution-types";
 
 function dataDir(){
@@ -40,7 +41,54 @@ class AutonomousExecutionLoop{
 
   cancel(missionId:string){this.cancelled.add(missionId);return true;}
 
+  private executeLocalDocsBootstrap(data:any):MissionExecutionSummary{
+    const missionId=crypto.randomUUID();
+    const startedAt=new Date().toISOString();
+    const projectPath=String(data?.projectPath||data?.project_path||"");
+    const projectName=String(data?.projectName||path.basename(projectPath)||"Project");
+    this.emit({missionId,type:"mission.planned",at:startedAt,data:{goal:data?.goal,local:"project-docs"}});
+    const created=ensureOfficeProjectDocs({
+      projectPath,
+      projectName,
+      brief:String(data?.brief||data?.goal||"")
+    });
+    const completedAt=new Date().toISOString();
+    const finalResult={
+      goal:String(data?.goal||""),
+      localDocs:true,
+      created,
+      testStage:{ok:true},
+      reviewStage:{ok:true}
+    };
+    this.emit({missionId,type:"mission.completed",at:completedAt,data:finalResult});
+    try{
+      recordMissionProgress({
+        projectPath,
+        missionId,
+        goal:String(data?.goal||"Create Project Docs"),
+        status:"PARTIAL",
+        summary:"Wrote local PROGRESS/ROADMAP/PROJECT_STATE without an LLM. Open checkbox items are ready for factory or Cursor CLI work.",
+        evidence:[`progress: ${created.progress}`,`roadmap: ${created.roadmap}`]
+      });
+    }catch(error:any){
+      this.emit({missionId,type:"mission.progress_sync_failed",at:new Date().toISOString(),message:String(error?.message||error)});
+    }
+    return {
+      missionId,
+      status:"completed",
+      startedAt,
+      completedAt,
+      agentResults:[{agentId:"docs",providerId:"local",ok:true,output:created,error:null,attempts:1}],
+      finalResult,
+      errors:[]
+    };
+  }
+
   async execute(data:any):Promise<MissionExecutionSummary>{
+    if(isDocsBootstrapGoal(String(data?.goal||""))){
+      return this.executeLocalDocsBootstrap(data);
+    }
+
     const approval=classifyApprovalNeed(String(data?.goal||""));
     if(approval.required&&!data?.approved){
       const missionId=crypto.randomUUID();
